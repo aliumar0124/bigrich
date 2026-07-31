@@ -435,6 +435,8 @@ provider `ghl` (webhook URL still to be pasted), mailto fallback to bigrichhauli
 ```
 build.py                          spreadsheet -> widget build script (stdlib only)
 verify.py                         reconciles the build against all three sheets
+docs/Big-Rich-Hauling-GHL-Setup-Guide.pdf   hand this to whoever builds the GHL workflow
+docs/ghl-guide.html               its source; re-render with `node docs/render-guide.js`
 data/…price list.xlsx             master price list, the source of truth
 src/calculator.template.html      the widget (markup + CSS + JS), with a data placeholder
 dist/big-rich-quote-calculator.html   ← paste THIS into Elementor

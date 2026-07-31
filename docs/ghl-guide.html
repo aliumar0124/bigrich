@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Big Rich Hauling — GHL Inbound Webhook Setup Guide</title>
+<style>
+  @page { size: Letter; margin: 16mm 14mm 18mm; }
+  * { box-sizing: border-box; }
+  body {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 10.2pt; line-height: 1.55; color: #23282D; margin: 0;
+    -webkit-print-color-adjust: exact; print-color-adjust: exact;
+  }
+  h1 { font-size: 19.5pt; line-height: 1.15; margin: 0 0 3pt; color: #D5291B; letter-spacing: -.2pt; }
+  .sub { font-size: 10.2pt; color: #5C6670; margin: 0 0 12pt; font-weight: 600; }
+  h2 {
+    font-size: 12.5pt; margin: 17pt 0 8pt; color: #23282D; padding-bottom: 5pt;
+    border-bottom: 2px solid #C4A052; page-break-after: avoid;
+  }
+  h3 { font-size: 10.8pt; margin: 14pt 0 5pt; color: #AE1F12; page-break-after: avoid; }
+  p { margin: 0 0 8pt; }
+  ul, ol { margin: 0 0 9pt; padding-left: 16pt; }
+  li { margin-bottom: 4pt; }
+  code {
+    font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 8.8pt;
+    background: #F2F3F5; padding: 1pt 3pt; border-radius: 2pt; color: #1E2226;
+    word-break: break-word;
+  }
+  pre {
+    font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 8.5pt; line-height: 1.5;
+    background: #F7F8F9; border: 1px solid #E2E6EA; border-left: 3px solid #C4A052;
+    border-radius: 4pt; padding: 8pt 10pt; margin: 0 0 10pt; white-space: pre-wrap;
+    word-break: break-word; page-break-inside: avoid;
+  }
+  table { border-collapse: collapse; width: 100%; margin: 0 0 11pt; font-size: 9pt; }
+  th {
+    background: #23282D; color: #fff; text-align: left; padding: 5pt 7pt;
+    font-size: 8.2pt; text-transform: uppercase; letter-spacing: .5pt;
+  }
+  td { border-bottom: 1px solid #E2E6EA; padding: 5pt 7pt; vertical-align: top; }
+  tr { page-break-inside: avoid; }
+  tbody tr:nth-child(even) td { background: #FAFBFC; }
+  .lead {
+    background: #FBF4E6; border: 1px solid #EBDCBB; border-radius: 5pt;
+    padding: 9pt 11pt; margin: 0 0 12pt; font-size: 9.4pt;
+  }
+  .warn {
+    background: #FDEDEB; border: 1px solid #F5CFCA; border-left: 3px solid #D5291B;
+    border-radius: 4pt; padding: 9pt 11pt; margin: 0 0 11pt; font-size: 9.4pt;
+    page-break-inside: avoid;
+  }
+  .note {
+    background: #F5F6F8; border: 1px solid #E2E6EA; border-left: 3px solid #8A949E;
+    border-radius: 4pt; padding: 9pt 11pt; margin: 0 0 11pt; font-size: 9.4pt;
+    page-break-inside: avoid;
+  }
+  .step {
+    display: inline-block; width: 17pt; height: 17pt; line-height: 17pt; text-align: center;
+    background: #D5291B; color: #fff; border-radius: 50%; font-weight: bold;
+    font-size: 9pt; margin-right: 6pt;
+  }
+  .who {
+    display: inline-block; background: #C4A052; color: #fff; font-size: 7.6pt; font-weight: bold;
+    text-transform: uppercase; letter-spacing: .5pt; padding: 2pt 6pt; border-radius: 8pt;
+    vertical-align: 2pt; margin-left: 4pt;
+  }
+  .who.web { background: #5C6670; }
+  .brand {
+    border-top: 3px solid #D5291B; padding-top: 10pt; margin-bottom: 12pt;
+    display: flex; justify-content: space-between; align-items: baseline;
+  }
+  .brand span { font-size: 8.6pt; color: #8A949E; font-weight: 600; }
+  .chk { list-style: none; padding-left: 0; }
+  .chk li { padding-left: 20pt; position: relative; margin-bottom: 6pt; }
+  .chk li:before {
+    content: ""; position: absolute; left: 0; top: 2pt; width: 11pt; height: 11pt;
+    border: 1.5px solid #8A949E; border-radius: 2pt;
+  }
+  .tight { margin-bottom: 4pt; }
+  .avoid { page-break-inside: avoid; }
+  .newpage { page-break-before: always; }
+  .kv { font-size: 9.2pt; }
+  .kv td:first-child { width: 34%; font-weight: 600; }
+  em.hl { font-style: normal; background: #FFF3CD; padding: 0 2pt; }
+</style>
+</head>
+<body>
+
+<div class="brand">
+  <span>BIG RICH HAULING &amp; JUNK REMOVAL</span>
+  <span>Automation handoff · GoHighLevel</span>
+</div>
+
+<h1>Website Estimator → GoHighLevel</h1>
+<p class="sub">Inbound Webhook setup guide · for the GHL automation contractor</p>
+
+<div class="lead">
+  <strong>What this is.</strong> The website has a new <strong>Item-by-Item Estimator</strong> — a
+  4-step calculator on bigrichhauling.com where a customer picks the items they need hauled, enters
+  their details, chooses a pickup window, and sees a priced estimate. When they press
+  <strong>Confirm booking</strong>, the widget POSTs the whole booking as flat JSON to a
+  GoHighLevel <strong>Inbound Webhook</strong>.
+  <br><br>
+  <strong>What we need from you.</strong> One workflow that (1) creates or updates the contact,
+  (2) emails the booking to <code>bigrichhauling@att.net</code>, and optionally (3) creates an
+  opportunity valued at the estimate. Roughly 20–30 minutes. Everything the widget sends is
+  documented in the field reference — no guessing required.
+</div>
+
+<table class="kv">
+  <tr><td>Receives</td><td>HTTP <code>POST</code>, <code>Content-Type: application/json</code>, flat snake_case keys (no nested objects)</td></tr>
+  <tr><td>Trigger type</td><td>Inbound Webhook (Workflow trigger)</td></tr>
+  <tr><td>Notification goes to</td><td><code>bigrichhauling@att.net</code></td></tr>
+  <tr><td>Lead source value</td><td><code>Website Estimator</code> (sent in the <code>source</code> field)</td></tr>
+  <tr><td>Volume</td><td>Low — one POST per completed booking. No batching, no retries from our side.</td></tr>
+</table>
+
+<h2>Setup steps</h2>
+
+<h3><span class="step">1</span>Create the workflow and copy the webhook URL <span class="who">GHL</span></h3>
+<p class="tight">In GHL: <strong>Automation → Workflows → + Create Workflow → Start from scratch</strong>.
+Add the trigger <strong>Inbound Webhook</strong>. GHL shows a URL shaped like:</p>
+<pre>https://services.leadconnectorhq.com/hooks/&lt;locationId&gt;/webhook-trigger/&lt;uuid&gt;</pre>
+<p>Send that URL back to whoever maintains the website. Nothing else is needed from GHL at this stage.</p>
+
+<h3><span class="step">2</span>Paste the URL into the widget <span class="who web">Website</span></h3>
+<p class="tight">In the Elementor <strong>HTML</strong> widget holding the estimator, find the
+<code>BRH_CONFIG</code> block near the top of the <code>&lt;script&gt;</code> and set:</p>
+<pre>submit: {
+  provider      : "ghl",
+  ghlWebhookUrl : "https://services.leadconnectorhq.com/hooks/…/webhook-trigger/…",
+  …
+}</pre>
+<div class="warn">
+  <strong>Until that URL is filled in, no bookings reach GHL.</strong> The widget falls back to
+  opening the customer's email app with the quote pre-filled — so leads aren't lost, but they don't
+  arrive in the CRM either. The browser console logs a warning while it's empty.
+</div>
+
+<h3><span class="step">3</span>Send one test booking before mapping anything <span class="who web">Website</span></h3>
+<div class="warn">
+  <strong>This step is not optional and it trips people up.</strong> A GHL Inbound Webhook only
+  learns the field names <em class="hl">after it has actually received a payload</em>. Until a real
+  POST arrives, the mapping dropdowns in the workflow are empty.
+  <br><br>
+  So: complete one real booking on the live page (any item, real email address), <em class="hl">then</em>
+  reopen the trigger. Every field in the reference table below will be listed and selectable.
+</div>
+
+<h3><span class="step">4</span>Build the workflow actions <span class="who">GHL</span></h3>
+
+<p><strong>4a · Create/Update Contact.</strong> Map as follows:</p>
+<table>
+  <thead><tr><th style="width:42%">GHL contact field</th><th>Webhook field</th></tr></thead>
+  <tbody>
+    <tr><td>First Name</td><td><code>first_name</code></td></tr>
+    <tr><td>Last Name</td><td><code>last_name</code></td></tr>
+    <tr><td>Email</td><td><code>email</code></td></tr>
+    <tr><td>Phone</td><td><code>phone</code></td></tr>
+    <tr><td>Address</td><td><code>address1</code></td></tr>
+    <tr><td>City</td><td><code>city</code></td></tr>
+    <tr><td>Postal Code</td><td><code>postal_code</code></td></tr>
+    <tr><td>State</td><td><code>state</code> (always <code>CA</code>)</td></tr>
+    <tr><td>Source</td><td><code>source</code></td></tr>
+  </tbody>
+</table>
+<p>Deduplicate on email or phone so a repeat customer updates their existing contact rather than
+creating a second one. Adding a tag such as <code>website-estimator</code> here makes these leads
+easy to segment and report on later.</p>
+
+<p><strong>4b · Send Internal Notification (Email) → <code>bigrichhauling@att.net</code>.</strong>
+This is the part that replaces the old email path, so it matters most. Reference any field with the
+<code>{{inboundWebhookRequest.&lt;field&gt;}}</code> token. Copy-paste ready:</p>
+<pre>Subject:
+New estimate — {{inboundWebhookRequest.estimated_total}} — {{inboundWebhookRequest.full_name}} ({{inboundWebhookRequest.city}})
+
+Body:
+{{inboundWebhookRequest.quote_summary}}</pre>
+<div class="note">
+  <strong>Why one token is enough.</strong> <code>quote_summary</code> is the entire formatted quote
+  as plain text — name, phone, email, address, pickup date and window, extra-labor notes, every item
+  with its line price, the subtotal, the minimum-charge adjustment, the total, and the estimate
+  disclaimer. If you'd rather build a styled HTML email, every individual field in the
+  reference table below is available as its own token.
+</div>
+
+<p><strong>4c · Create Opportunity <em>(optional but recommended)</em>.</strong> Put it in whichever
+pipeline suits new website bookings and set the monetary value from
+<code>estimated_value</code> — that field is a <strong>bare number</strong> (e.g. <code>95</code>)
+specifically so GHL accepts it as currency. Don't use <code>estimated_total</code> there; that one is
+the formatted string <code>"$95.00"</code>, intended for emails and SMS.</p>
+
+<p><strong>4d · Customer-facing follow-up <em>(optional)</em>.</strong> An SMS or email confirming the
+request works well here. The widget already shows an on-screen confirmation, so this is additive, not
+required. A useful line to include:</p>
+<pre>Thanks {{inboundWebhookRequest.first_name}}! We have your request for
+{{inboundWebhookRequest.preferred_date}}, {{inboundWebhookRequest.preferred_window}}.
+Estimated total {{inboundWebhookRequest.estimated_total}}. We'll call to confirm. — Big Rich Hauling</pre>
+
+<h2>Every field the widget sends</h2>
+<p>All keys are top-level and snake_case — deliberately flat, because Inbound Webhook mapping
+struggles with nested objects. Reference each as
+<code>{{inboundWebhookRequest.&lt;field&gt;}}</code>.</p>
+
+<table>
+  <thead><tr><th style="width:26%">Field</th><th style="width:12%">Type</th><th>Example / notes</th></tr></thead>
+  <tbody>
+    <tr><td><code>source</code></td><td>text</td><td><code>Website Estimator</code> — constant, use as the contact source</td></tr>
+    <tr><td><code>full_name</code></td><td>text</td><td><code>Maria De La Cruz</code></td></tr>
+    <tr><td><code>first_name</code></td><td>text</td><td><code>Maria</code></td></tr>
+    <tr><td><code>last_name</code></td><td>text</td><td><code>De La Cruz</code> — split takes the first word as the given name, so multi-word surnames stay intact</td></tr>
+    <tr><td><code>email</code></td><td>email</td><td><code>maria@example.com</code> — required by the form, always present</td></tr>
+    <tr><td><code>phone</code></td><td>text</td><td><code>(916) 555-0177</code> — as the customer typed it; see troubleshooting if SMS steps reject it</td></tr>
+    <tr><td><code>address1</code></td><td>text</td><td><code>44 Oak Ave</code></td></tr>
+    <tr><td><code>city</code></td><td>text</td><td><code>Roseville</code> — chosen from a fixed dropdown of service areas</td></tr>
+    <tr><td><code>postal_code</code></td><td>text</td><td><code>95661</code> — optional field, can be empty</td></tr>
+    <tr><td><code>state</code></td><td>text</td><td><code>CA</code> — constant</td></tr>
+    <tr><td><code>preferred_date</code></td><td>text</td><td><code>Sat, Sep 5, 2026</code> — human-readable, for emails</td></tr>
+    <tr><td><code>preferred_date_iso</code></td><td>date</td><td><code>2026-09-05</code> — use this one for date fields or appointment logic</td></tr>
+    <tr><td><code>preferred_window</code></td><td>text</td><td><code>7:00 AM – 9:00 AM</code> — one of six two-hour windows</td></tr>
+    <tr><td><code>item_count</code></td><td>number</td><td><code>3</code> — total pieces, quantities included</td></tr>
+    <tr><td><code>cubic_yards</code></td><td>number</td><td><code>6.5</code> — estimated volume; useful for dispatching the right truck</td></tr>
+    <tr><td><code>items_subtotal</code></td><td>text</td><td><code>$120.00</code> — before the minimum charge is applied</td></tr>
+    <tr><td><code>minimum_adjustment</code></td><td>text</td><td><code>$15.00</code>, or <strong>empty</strong> when the load already exceeds the $95 minimum</td></tr>
+    <tr><td><code>estimated_total</code></td><td>text</td><td><code>$95.00</code> — formatted, for emails and SMS</td></tr>
+    <tr><td><code>estimated_value</code></td><td>number</td><td><code>95</code> — bare number, for opportunity monetary value</td></tr>
+    <tr><td><code>extra_labor</code></td><td>text</td><td><code>Items are upstairs or downstairs; Long carry or tight access</code> — semicolon separated, empty if none flagged</td></tr>
+    <tr><td><code>itemized_list</code></td><td>multiline</td><td><code>1 x Sofa - 3 cushion — $120.00</code>, one item per line</td></tr>
+    <tr><td><code>customer_notes</code></td><td>multiline</td><td>Gate codes, access instructions, etc. Often empty.</td></tr>
+    <tr><td><code>quote_summary</code></td><td>multiline</td><td>The complete formatted quote. Ideal as the whole body of the internal notification email.</td></tr>
+  </tbody>
+</table>
+
+<div class="note">
+  <strong>How the price is built,</strong> in case a workflow needs to reason about it:
+  each item's price is its estimated cubic yards × <strong>$40/cu yd</strong>, taken from Big Rich
+  Hauling's master household price list (640 items). If the subtotal is under the
+  <strong>$95 minimum service charge</strong>, the difference appears as
+  <code>minimum_adjustment</code> and the total becomes $95.00. Access conditions
+  (<code>extra_labor</code>) are captured for dispatch but deliberately <em>do not</em> change the
+  quoted price — the crew confirms any extra on site.
+</div>
+
+<h2>Troubleshooting</h2>
+
+<h3>The mapping dropdowns are empty</h3>
+<p>The webhook hasn't received a payload yet. Complete one real booking on the live page, then
+reopen the trigger. See step 3.</p>
+
+<h3>Nothing arrives in GHL at all</h3>
+<p class="tight">The widget posts directly from the visitor's browser, so a cross-origin request is
+involved. It already handles the common failure: if the POST is refused at the CORS layer, it
+retries once as a CORS-simple request so the payload still lands, and only falls back to email if
+that fails too.</p>
+<p>If bookings still never appear, the website side can switch to a server-side relay
+(<code>provider: "wordpress"</code>), where WordPress forwards the same JSON to the same webhook URL
+via <code>wp_remote_post</code>. Identical payload, no browser CORS involved. That's a website-side
+change — the GHL workflow needs no edits at all.</p>
+
+<h3>Duplicate contacts appearing</h3>
+<p>Set the Create/Update Contact step to match on email or phone. Every booking requires both, so
+either key is reliable.</p>
+
+<h3>An SMS or phone-based step rejects the number</h3>
+<p>Phone arrives formatted as the customer typed it, e.g. <code>(916) 555-0177</code>. GHL normally
+normalises this, but if a step objects, add a small formatting action to strip non-digits and prefix
+<code>+1</code> before the SMS step.</p>
+
+<h3>A field renders blank in an email</h3>
+<p>Two fields are legitimately empty sometimes: <code>minimum_adjustment</code> (when the load is
+already above $95) and <code>postal_code</code>, <code>customer_notes</code>,
+<code>extra_labor</code> (all optional inputs). Guard those in templates rather than treating a blank
+as a bug.</p>
+
+<h3>Spam or junk submissions</h3>
+<p>The widget carries a hidden honeypot field: a bot that fills it sees a normal success screen while
+nothing is sent anywhere, so junk shouldn't reach GHL. If any does get through, add a filter or
+condition step on <code>email</code> / <code>phone</code> before the contact is created.</p>
+
+<div class="warn">
+  <strong>Security — please don't work around this.</strong> The webhook URL sits in client-side code,
+  so it is visible in the page source. That's acceptable because an Inbound Webhook URL is
+  <strong>write-only</strong>: it can start this workflow and nothing else — it cannot read data out
+  of GHL. The worst case is junk contacts, which the honeypot and a filter step handle.
+  <br><br>
+  <strong>Never place a GHL API key, private-integration token, or location API key in the
+  widget</strong> — anyone viewing source could read it and use it against the account. If the URL
+  itself needs to be hidden, use the WordPress relay described above.
+</div>
+
+<h2>Done-when checklist</h2>
+<ul class="chk">
+  <li>Workflow created with an <strong>Inbound Webhook</strong> trigger, and the URL handed to the website maintainer.</li>
+  <li>URL pasted into the widget's <code>ghlWebhookUrl</code>, page updated in Elementor.</li>
+  <li>One test booking submitted from the live page, and it appears in GHL.</li>
+  <li>Contact created with name, email, phone, full address and source <code>Website Estimator</code>.</li>
+  <li>Internal notification received at <code>bigrichhauling@att.net</code>, containing the full itemized quote.</li>
+  <li>Repeat submission with the same email updates the existing contact instead of duplicating it.</li>
+  <li><em>(If used)</em> Opportunity created with the monetary value matching the quoted total.</li>
+  <li>Workflow published.</li>
+</ul>
+
+<div class="note" style="margin-top:14pt">
+  <strong>One test worth running at the end:</strong> book a single cheap item — a small box or a
+  bathroom scale. The subtotal will be a couple of dollars, so the minimum charge should kick in and
+  the notification email should read <strong>$95.00</strong> with a
+  <code>minimum_adjustment</code> line. If that arrives correctly, both the pricing logic and the
+  full mapping chain are proven end to end.
+</div>
+
+</body>
+</html>
