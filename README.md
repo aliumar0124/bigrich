@@ -89,8 +89,10 @@ add_action( 'wp_ajax_nopriv_brh_booking', 'brh_handle_booking' );
 add_action( 'wp_ajax_brh_booking',        'brh_handle_booking' );
 function brh_handle_booking() {
 
-    $office = 'bigrichhauling@att.net';   // where bookings land
-    $data   = json_decode( file_get_contents( 'php://input' ), true );
+    $office          = 'bigrichhauling@att.net';  // where bookings land
+    $notify_customer = true;                      // false = don't email the customer a copy
+
+    $data = json_decode( file_get_contents( 'php://input' ), true );
     if ( ! is_array( $data ) ) {
         wp_send_json_error( 'bad payload', 400 );
     }
@@ -136,7 +138,7 @@ function brh_handle_booking() {
     ) );
 
     // 6. the customer's confirmation
-    if ( $sent ) {
+    if ( $sent && $notify_customer ) {
         wp_mail(
             $email,
             'We received your junk removal request — Big Rich Hauling',
@@ -169,7 +171,42 @@ SMTP with SPF/DKIM on bigrichhauling.com lands in the inbox where raw PHP `mail(
 Use *WP Mail SMTP → Tools → Email Test* to confirm delivery to bigrichhauling@att.net before going
 live, then submit one real booking through the widget end to end.
 
-Two notes:
+### Notes for the current WP Mail SMTP setup (Google / Gmail mailer)
+
+The site is configured with the **Google / Gmail** mailer, OAuth-connected as
+`websites@strousehouse.io`, *From Email* `websites@strousehouse.io`, *From Name*
+"Big Rich Hauling & Junk Removal", with **Force From Email** and **Force From Name** both ON.
+
+That works with the snippet above as-is. Specifically:
+
+- **Force From Email does not touch Reply-To.** It overrides the From address only, so the office
+  email still has Reply-To set to the customer — pressing reply in the att.net inbox reaches the
+  customer, not the sending account.
+- **Volume is fine.** WP Mail SMTP warns that the Gmail mailer suits low-volume sites because of
+  Gmail API rate limits. A booking form is exactly that.
+
+Two things to decide before going live:
+
+1. **The customer's confirmation email will come from `websites@strousehouse.io`** (displayed as
+   "Big Rich Hauling & Junk Removal"). A homeowner who just booked Big Rich Hauling receiving mail
+   from an unrelated agency domain looks odd and costs a little trust. Three ways to handle it:
+   - Add a bigrichhauling.com address as a verified *Send mail as* alias inside the connected Gmail
+     account, then set *From Email* to it. **Gmail rejects any From address that isn't the connected
+     account or a verified alias** — this is the most likely way to break sending, so verify the
+     alias in Gmail first, then change the field.
+   - Point WP Mail SMTP at a mailer authenticated for bigrichhauling.com instead (SendLayer,
+     SMTP.com and Brevo are the three it recommends).
+   - Or don't email customers at all: set `$notify_customer = false;` in the snippet, or
+     `autoReply: false` in the widget config. You still get every booking; the customer just relies
+     on the on-screen confirmation and your callback.
+2. **Check SPF/DKIM for strousehouse.io.** Sending happens through Google's infrastructure, so make
+   sure that domain has `include:_spf.google.com` in SPF and DKIM enabled in Google Admin
+   (Apps → Google Workspace → Gmail → Authenticate email). Without DKIM, Google signs with a default
+   `*.gappssmtp.com` key that doesn't align with the From domain, which weakens DMARC — and att.net
+   (AT&T/Yahoo) is strict. Send one booking and check it lands in the inbox, not spam; mail-tester.com
+   gives you a score if you want detail.
+
+Two more notes:
 
 - Some hosts and security plugins (Wordfence, certain Cloudflare rules) block anonymous
   `admin-ajax.php` POSTs. If bookings start failing, register a REST route instead and point
