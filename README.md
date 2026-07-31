@@ -72,34 +72,132 @@ copy. Replies go straight to the customer's address.
 quote pre-filled and addressed to bigrichhauling@att.net, and shows the phone number — the lead is
 never silently lost.
 
-### Prefer not to use a third party?
+### Recommended: send through WordPress (works with WP Mail SMTP)
 
-Two alternatives, both a one-line config change:
+If the site runs **WP Mail SMTP**, this is the better path — that plugin intercepts `wp_mail()`
+itself, so the snippet below needs no plugin-specific code and every booking goes out over your own
+authenticated SMTP. No third party ever sees a lead, and there's no activation step.
 
-1. **`submitMode: "mailto"`** — skips FormSubmit entirely and always opens the customer's own mail app
-   with the quote pre-filled. Zero dependencies, but it relies on the customer pressing send.
-2. **Send through WordPress** — point `endpoint` at your own handler and let `wp_mail` deliver it.
-   Add this to your child theme's `functions.php` (or a Code Snippets plugin):
+**Step 1.** Add this to your child theme's `functions.php` (or a Code Snippets plugin):
 
-   ```php
-   add_action( 'wp_ajax_nopriv_brh_booking', 'brh_booking' );
-   add_action( 'wp_ajax_brh_booking',        'brh_booking' );
-   function brh_booking() {
-       $data = json_decode( file_get_contents( 'php://input' ), true );
-       if ( empty( $data['phone'] ) ) { wp_send_json_error( 'missing phone', 400 ); }
-       $body = sanitize_textarea_field( $data['message'] ?? '' );
-       wp_mail(
-           'bigrichhauling@att.net',
-           sanitize_text_field( $data['_subject'] ?? 'New booking request' ),
-           $body,
-           array( 'Reply-To: ' . sanitize_email( $data['email'] ?? '' ) )
-       );
-       wp_send_json_success();
-   }
-   ```
+```php
+/**
+ * Big Rich Hauling — estimator booking handler.
+ * Receives the widget's JSON, emails the office and confirms to the customer.
+ */
+add_action( 'wp_ajax_nopriv_brh_booking', 'brh_handle_booking' );
+add_action( 'wp_ajax_brh_booking',        'brh_handle_booking' );
+function brh_handle_booking() {
 
-   Then set `endpoint: "https://bigrichhauling.com/wp-admin/admin-ajax.php?action=brh_booking"`.
-   This keeps every lead inside your own site and needs no activation step.
+    $office = 'bigrichhauling@att.net';   // where bookings land
+    $data   = json_decode( file_get_contents( 'php://input' ), true );
+    if ( ! is_array( $data ) ) {
+        wp_send_json_error( 'bad payload', 400 );
+    }
+
+    // 1. same-site requests only
+    $origin = isset( $_SERVER['HTTP_ORIGIN'] )
+        ? wp_parse_url( $_SERVER['HTTP_ORIGIN'], PHP_URL_HOST ) : '';
+    if ( $origin && $origin !== wp_parse_url( home_url(), PHP_URL_HOST ) ) {
+        wp_send_json_error( 'bad origin', 403 );
+    }
+
+    // 2. bot filters: the widget's off-screen honeypot, and how long the form took
+    if ( ! empty( $data['_hp'] ) ) {
+        wp_send_json_error( 'spam', 400 );
+    }
+    if ( isset( $data['_elapsed'] ) && (int) $data['_elapsed'] < 5 ) {
+        wp_send_json_error( 'too fast', 400 );
+    }
+
+    // 3. rate limit: 5 bookings per hour per IP
+    $ip  = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( $_SERVER['REMOTE_ADDR'] ) : 'unknown';
+    $key = 'brh_rl_' . md5( $ip );
+    $hits = (int) get_transient( $key );
+    if ( $hits >= 5 ) {
+        wp_send_json_error( 'rate limited', 429 );
+    }
+    set_transient( $key, $hits + 1, HOUR_IN_SECONDS );
+
+    // 4. required fields
+    $name  = sanitize_text_field( $data['name'] ?? '' );
+    $phone = sanitize_text_field( $data['phone'] ?? '' );
+    $email = sanitize_email( $data['email'] ?? '' );
+    if ( ! $name || ! $phone || ! is_email( $email ) ) {
+        wp_send_json_error( 'missing fields', 400 );
+    }
+
+    $subject = sanitize_text_field( $data['_subject'] ?? 'New booking request' );
+    $body    = sanitize_textarea_field( $data['message'] ?? '' );
+
+    // 5. the office copy — Reply-To is the customer, so hitting reply reaches them
+    $sent = wp_mail( $office, $subject, $body, array(
+        'Reply-To: ' . $name . ' <' . $email . '>',
+    ) );
+
+    // 6. the customer's confirmation
+    if ( $sent ) {
+        wp_mail(
+            $email,
+            'We received your junk removal request — Big Rich Hauling',
+            "Thanks {$name}!\n\nWe received your request and will call you shortly to confirm "
+            . "your pickup window.\n\n{$body}\n\nQuestions? Call 916-252-9500.",
+            array( 'Reply-To: ' . $office )
+        );
+    }
+
+    $sent ? wp_send_json_success() : wp_send_json_error( 'wp_mail failed', 500 );
+}
+```
+
+**Step 2.** In the widget's `BRH_CONFIG`, swap the two `endpoint` lines — uncomment the
+admin-ajax one and delete (or comment out) the FormSubmit one:
+
+```js
+   endpoint   : "/wp-admin/admin-ajax.php?action=brh_booking",
+// endpoint   : "https://formsubmit.co/ajax/bigrichhauling@att.net",
+```
+
+Keep it as a **relative path**. That way it always resolves against whatever host the page is on, so
+a www / non-www mismatch can never trip CORS.
+
+**Step 3.** In WP Mail SMTP, set *From Email* to an address on your own domain
+(e.g. `no-reply@bigrichhauling.com`) and leave *Force From Email* on. The snippet sets Reply-To to
+the customer, which survives that setting — so replies still go to the customer, not to no-reply.
+This matters because att.net (AT&T/Yahoo) is strict about sender authentication: mail from your
+SMTP with SPF/DKIM on bigrichhauling.com lands in the inbox where raw PHP `mail()` often doesn't.
+Use *WP Mail SMTP → Tools → Email Test* to confirm delivery to bigrichhauling@att.net before going
+live, then submit one real booking through the widget end to end.
+
+Two notes:
+
+- Some hosts and security plugins (Wordfence, certain Cloudflare rules) block anonymous
+  `admin-ajax.php` POSTs. If bookings start failing, register a REST route instead and point
+  `endpoint` at `/wp-json/brh/v1/booking`:
+
+  ```php
+  add_action( 'rest_api_init', function () {
+      register_rest_route( 'brh/v1', '/booking', array(
+          'methods'             => 'POST',
+          'callback'            => 'brh_handle_booking',
+          'permission_callback' => '__return_true',
+      ) );
+  } );
+  ```
+
+- WP Mail SMTP's email log (Pro) then keeps a record of every booking, which is a handy backstop if
+  a customer says they submitted and never heard back.
+
+### Or skip sending entirely
+
+**`submitMode: "mailto"`** always opens the customer's own mail app with the quote pre-filled and
+addressed to `submitTo`. Zero dependencies, but it relies on the customer pressing send.
+
+### Spam protection
+
+The widget ships an off-screen honeypot field and reports how long the form took. Both are sent
+**only** to a self-hosted endpoint (FormSubmit would print them as rows in the email), and the PHP
+snippet above checks them along with an origin check and a per-IP rate limit.
 
 ---
 

@@ -213,6 +213,7 @@
 #brh-quote .brh-field textarea{min-height:96px!important;resize:vertical!important;}
 #brh-quote .brh-field > .brh-err{display:block!important;font-size:.78rem!important;font-weight:700!important;color:var(--brh-red)!important;margin-top:6px!important;text-transform:none!important;letter-spacing:normal!important;}
 #brh-quote .brh-field[data-invalid="1"] input,#brh-quote .brh-field[data-invalid="1"] select,#brh-quote .brh-field[data-invalid="1"] textarea{border-color:var(--brh-red)!important;background:var(--brh-red-soft)!important;}
+#brh-quote .brh-hp{position:absolute!important;left:-9999px!important;top:auto!important;width:1px!important;height:1px!important;overflow:hidden!important;}
 #brh-quote .brh-flags{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(232px,1fr))!important;gap:10px!important;}
 #brh-quote .brh-flag{display:flex!important;align-items:center!important;gap:10px!important;padding:12px 14px!important;border:1.5px solid var(--brh-line)!important;border-radius:11px!important;background:#fff!important;cursor:pointer!important;font-size:.9rem!important;font-weight:600!important;}
 #brh-quote .brh-flag:hover{border-color:var(--brh-gold)!important;}
@@ -410,6 +411,7 @@
           <input type="text" data-brh-input="zip" inputmode="numeric" autocomplete="postal-code" maxlength="10" placeholder="95816"></label>
         <label class="brh-field brh-wide" data-brh-field="notes"><span>Additional notes (optional)</span>
           <textarea data-brh-input="notes" rows="3" placeholder="Gate codes, access instructions, anything we should know…"></textarea></label>
+        <span class="brh-hp" aria-hidden="true"><input type="text" data-brh-hp tabindex="-1" autocomplete="off" placeholder="Leave this field empty"></span>
       </div>
       <div class="brh-pane-h" style="margin:22px 0 12px!important;">
         <h3>Does anything need extra labor?</h3>
@@ -508,7 +510,15 @@
        (wp_mail / WPForms) alternative if you'd rather not use a third party. */
     submitMode : "endpoint",
     submitTo   : "bigrichhauling@att.net",
+
+    /* RECOMMENDED if you run WP Mail SMTP: add the brh_booking snippet from
+       README.md to functions.php, then swap the two lines below. Keep it a
+       relative path so www / non-www can never trip CORS. wp_mail() is what
+       WP Mail SMTP intercepts, so bookings go out over your own SMTP and no
+       third party ever sees a lead. */
+ // endpoint   : "/wp-admin/admin-ajax.php?action=brh_booking",
     endpoint   : "https://formsubmit.co/ajax/bigrichhauling@att.net",
+
     autoReply  : true,              // send the customer a copy/confirmation
 
     // Cities offered in the "City / area" dropdown.
@@ -547,6 +557,7 @@
 
   var CFG = BRH_CONFIG;
   var RATE = CFG.ratePerCubicYard;
+  var LOADED_AT = Date.now();
   var STEP_LABELS = ["Select Items","Your Info","Schedule","Review & Price"];
   var ALL = [], BY_ID = {};
   BRH_DATA.forEach(function(cat){
@@ -812,6 +823,16 @@
       message: summaryText()
     };
   }
+  /* Cheap bot filters for our own handler: an off-screen field a human never
+     fills, and how long the form took. FormSubmit would render both as rows in
+     the email, so they are only sent to a self-hosted endpoint. */
+  function withSpamGuard(body){
+    if(/formsubmit\.co/i.test(CFG.endpoint)) return body;
+    var hp = q("[data-brh-hp]");
+    body._hp = hp ? hp.value : "";
+    body._elapsed = Math.round((Date.now() - LOADED_AT) / 1000);
+    return body;
+  }
 
   /* ---------- validation ---------- */
   function fieldError(name, ok, msg){
@@ -991,7 +1012,7 @@
     var label = btn.innerHTML;
     btn.setAttribute("disabled","disabled");
     btn.innerHTML = "Sending…";
-    var body = payload();
+    var body = withSpamGuard(payload());
     if(CFG.autoReply){
       body._autoresponse = "Thanks " + (state.details.name || "") + "! We received your junk removal request. " +
         "Your estimated total is " + money(totals().total) + ", based on the items you entered. " +

@@ -123,7 +123,18 @@ def main():
         return m.group(1) if m else None
 
     minimum = cfg("minimumCharge", r"([\d.]+)")
-    submit_to, endpoint = cfg("submitTo"), cfg("endpoint")
+    submit_to = cfg("submitTo")
+
+    # the config ships alternative endpoints commented out — only the live one counts
+    endpoint = None
+    for line in html.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("//") or "endpoint" not in stripped:
+            continue
+        m = re.search(r'endpoint\s*:\s*"([^"]*)"', stripped)
+        if m:
+            endpoint = m.group(1)
+            break
     windows = re.findall(r'"(\d{1,2}:\d\d [AP]M – \d{1,2}:\d\d [AP]M)"', html)
     print(f"  minimum service charge         ${minimum}")
     print(f"  bookings emailed to            {submit_to}")
@@ -136,8 +147,18 @@ def main():
     ):
         if snippet not in html:
             problems.append(f"{label} about the minimum charge is missing from the widget")
-    if submit_to and endpoint and submit_to not in endpoint:
+    # A third-party endpoint encodes the destination address in its URL, so the two
+    # must agree. A self-hosted endpoint (relative path) decides the address in PHP.
+    if not endpoint:
+        problems.append("no active endpoint found in the widget config")
+    elif endpoint.startswith("/"):
+        print("  endpoint                       self-hosted (address set in PHP)")
+        if not re.search(r"_hp|_elapsed", html):
+            problems.append("self-hosted endpoint but the spam-guard fields are missing")
+    elif submit_to and submit_to not in endpoint:
         problems.append(f"endpoint '{endpoint}' does not point at submitTo '{submit_to}'")
+    else:
+        print("  endpoint                       third-party, address matches submitTo")
     if not windows:
         problems.append("no pickup windows found in the widget config")
 
