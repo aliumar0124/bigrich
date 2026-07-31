@@ -101,7 +101,8 @@ This was the main design constraint, so it is handled defensively:
 1. Replace `data/Big_Rich_Hauling_Master_Household_Item_Price_List.xlsx` with the new sheet
    (same column layout: Item ID, Category, Household Item, Estimated Cubic Yards, Estimated Price).
 2. Run `python3 build.py` — standard library only, no dependencies.
-3. Re-paste `dist/big-rich-quote-calculator.html` into the Elementor HTML widget.
+3. Run `python3 verify.py` to reconcile the build against all three sheets (see below).
+4. Re-paste `dist/big-rich-quote-calculator.html` into the Elementor HTML widget.
 
 ```
 $ python3 build.py
@@ -113,6 +114,19 @@ wrote           dist/big-rich-quote-calculator.html  (92.0 KB)
 
 Do not hand-edit the generated item data in `dist/` — edit the spreadsheet or
 `src/calculator.template.html` and rebuild.
+
+### Verifying against the spreadsheet
+
+`python3 verify.py` cross-checks four sources and exits non-zero on any mismatch:
+
+- **Master Price List** — every item row, and that each stated price equals `cubic yards × rate`.
+- **Instructions & Rates** — the rate, and that all seven estimating rules are reflected somewhere
+  in the widget (it fails if a rule is added to the sheet and not handled).
+- **Category Summary** — per-category item count, lowest price and highest price.
+- **dist/big-rich-quote-calculator.html** — item count, item IDs, the configured rate, and that
+  every *Popular items* ID resolves to a real item.
+
+Current state: all 20 categories reconcile, 640/640 items, rate $40.00, 20/20 popular IDs resolved.
 
 ---
 
