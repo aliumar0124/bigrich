@@ -22,13 +22,13 @@ BUILT = ROOT / "dist" / "big-rich-quote-calculator.html"
 
 # Every rule on the 'Instructions & Rates' sheet, and where the widget honours it.
 RULE_COVERAGE = {
-    "How price is calculated": "step 1 subhead + estimate breakdown row 'cu yd x $40/cu yd'",
-    "Small items": "step 1 note (bundle into boxes/bags/totes) + $125 minimum service charge",
-    "Volume basis": "estimate fine print ('practical loading allowances')",
-    "Packing differences": "estimate fine print ('lower when broken down, nested or flattened')",
-    "Weight and labor": "'Unusually heavy or dense' add-on + fine print",
-    "Stairs and distance": "'Stairs or elevator', 'Long carry', 'Disassembly' add-ons",
-    "Special disposal": "step 2 warning note + estimate fine print (full material list)",
+    "How price is calculated": "per-item lines in the quote breakdown + 'cu yd x $40/cu yd' in the booking email",
+    "Small items": "step 1 bundling note (boxes/bags/totes) + the $95 minimum service charge",
+    "Volume basis": "quote note ('the space it typically occupies once loaded, not exact measurements')",
+    "Packing differences": "quote note ('lower when broken down, nested or flattened')",
+    "Weight and labor": "'Unusually heavy or dense items' access flag + quote note",
+    "Stairs and distance": "'upstairs or downstairs', 'Long carry', 'dismantling' access flags + quote note",
+    "Special disposal": "quote note listing every material with a separate disposal charge",
 }
 
 
@@ -117,13 +117,29 @@ def main():
     if float(m.group(1)) != rate:
         problems.append(f"widget rate {m.group(1)} != sheet rate {rate}")
 
-    # popular-items tab must reference real IDs
-    pop = re.search(r"popularIds:\s*\[(.*?)\]", html, re.S)
-    pop_ids = re.findall(r'"([A-Z]{2}-\d{3})"', pop.group(1))
-    missing = [p for p in pop_ids if p not in ids_built]
-    print(f"  popular tab IDs resolved       {len(pop_ids) - len(missing)}/{len(pop_ids)}")
-    if missing:
-        problems.append(f"popularIds reference unknown items: {missing}")
+    # booking settings the customer-facing copy depends on
+    def cfg(key, pattern=r'"([^"]*)"'):
+        m = re.search(key + r"\s*:\s*" + pattern, html)
+        return m.group(1) if m else None
+
+    minimum = cfg("minimumCharge", r"([\d.]+)")
+    submit_to, endpoint = cfg("submitTo"), cfg("endpoint")
+    windows = re.findall(r'"(\d{1,2}:\d\d [AP]M – \d{1,2}:\d\d [AP]M)"', html)
+    print(f"  minimum service charge         ${minimum}")
+    print(f"  bookings emailed to            {submit_to}")
+    print(f"  pickup windows offered         {len(windows)}")
+
+    # the on-screen copy quotes the minimum, so the two must not drift apart
+    for label, snippet in (
+        ("hero line", "minimum service charge applies to all jobs"),
+        ("breakdown note", "minimum service charge covering labor, travel, and disposal"),
+    ):
+        if snippet not in html:
+            problems.append(f"{label} about the minimum charge is missing from the widget")
+    if submit_to and endpoint and submit_to not in endpoint:
+        problems.append(f"endpoint '{endpoint}' does not point at submitTo '{submit_to}'")
+    if not windows:
+        problems.append("no pickup windows found in the widget config")
 
     print()
     if problems:
