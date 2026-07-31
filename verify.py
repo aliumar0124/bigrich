@@ -44,7 +44,7 @@ def sheets():
 def main():
     rate, categories = load_items()
     rates_sheet, summary_sheet = sheets()
-    problems = []
+    problems, todos = [], []
 
     # ---- sheet 2: rate + rules -------------------------------------------
     print("Instructions & Rates")
@@ -123,18 +123,14 @@ def main():
         return m.group(1) if m else None
 
     minimum = cfg("minimumCharge", r"([\d.]+)")
-    submit_to = cfg("submitTo")
-
-    # the config ships alternative endpoints commented out — only the live one counts
-    endpoint = None
-    for line in html.splitlines():
-        stripped = line.strip()
-        if stripped.startswith("//") or "endpoint" not in stripped:
-            continue
-        m = re.search(r'endpoint\s*:\s*"([^"]*)"', stripped)
-        if m:
-            endpoint = m.group(1)
-            break
+    submit_to = cfg("email")
+    provider = (cfg("provider") or "").lower()
+    urls = {
+        "ghl": cfg("ghlWebhookUrl"),
+        "wordpress": cfg("wordpressUrl"),
+        "formsubmit": cfg("formsubmitUrl"),
+    }
+    endpoint = urls.get(provider)
     windows = re.findall(r'"(\d{1,2}:\d\d [AP]M – \d{1,2}:\d\d [AP]M)"', html)
     print(f"  minimum service charge         ${minimum}")
     print(f"  bookings emailed to            {submit_to}")
@@ -147,29 +143,53 @@ def main():
     ):
         if snippet not in html:
             problems.append(f"{label} about the minimum charge is missing from the widget")
-    # A third-party endpoint encodes the destination address in its URL, so the two
-    # must agree. A self-hosted endpoint (relative path) decides the address in PHP.
-    if not endpoint:
-        problems.append("no active endpoint found in the widget config")
-    elif endpoint.startswith("/"):
-        print("  endpoint                       self-hosted (address set in PHP)")
+    print(f"  submit provider                {provider or '(none)'}")
+    if provider not in ("ghl", "wordpress", "formsubmit", "mailto"):
+        problems.append(f"submit.provider '{provider}' is not one of ghl/wordpress/formsubmit/mailto")
+    elif provider == "ghl":
+        if endpoint:
+            print(f"  GHL webhook                    {endpoint[:60]}…")
+        else:
+            todos.append(
+                "submit.provider is \"ghl\" but ghlWebhookUrl is empty — paste the Inbound "
+                "Webhook URL from your GHL workflow. Until then every booking falls back to "
+                f"the pre-filled email to {submit_to}."
+            )
+    elif provider == "wordpress":
+        print(f"  WordPress handler              {endpoint}")
+        if not endpoint.startswith("/"):
+            todos.append(
+                f"wordpressUrl '{endpoint}' is absolute — prefer a relative path so a "
+                "www / non-www mismatch cannot trip CORS"
+            )
         if not re.search(r"_hp|_elapsed", html):
-            problems.append("self-hosted endpoint but the spam-guard fields are missing")
-    elif submit_to and submit_to not in endpoint:
-        problems.append(f"endpoint '{endpoint}' does not point at submitTo '{submit_to}'")
-    else:
-        print("  endpoint                       third-party, address matches submitTo")
+            problems.append("WordPress provider but the spam-guard fields are missing")
+    elif provider == "formsubmit":
+        print(f"  FormSubmit                     {endpoint}")
+        if submit_to and submit_to not in endpoint:
+            problems.append(f"formsubmitUrl '{endpoint}' does not point at submit.email '{submit_to}'")
+
+    # whatever the provider, the mailto fallback must have somewhere to go
+    if not submit_to or "@" not in submit_to:
+        problems.append("submit.email is missing — the mailto fallback would have no destination")
     if not windows:
         problems.append("no pickup windows found in the widget config")
 
     print()
     if problems:
         print(f"FAILED — {len(problems)} problem(s):")
-        for p in problems:
-            print(f"  - {p}")
+        for problem in problems:
+            print(f"  - {problem}")
         return 1
+
     print("All checks passed: rates, rules, per-category counts and price ranges, "
           "item IDs and the shipped file all agree.")
+    if todos:
+        # Not a data mismatch — the build is correct but not wired up yet, so this
+        # is reported loudly without failing the check.
+        print(f"\nACTION REQUIRED before this goes live — {len(todos)} item(s):")
+        for todo in todos:
+            print(f"  ! {todo}")
     return 0
 
 

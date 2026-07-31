@@ -54,10 +54,143 @@ truth. `build.py` refuses to build if any row's stated price disagrees with `cub
 
 ## Where bookings go
 
-**Confirm booking** sends the whole quote to **bigrichhauling@att.net**.
+`BRH_CONFIG.submit.provider` picks the destination. Four options:
 
-Because an Elementor HTML widget has no backend of its own, the default path posts the booking to
-[FormSubmit](https://formsubmit.co), which forwards it to that address:
+| provider | What happens | Setup |
+|----------|--------------|-------|
+| **`"ghl"`** *(shipped default)* | Posts to a GoHighLevel **Inbound Webhook**. The lead becomes a GHL contact (and optionally an opportunity), and the GHL workflow emails bigrichhauling@att.net. | Paste one URL — no code |
+| `"wordpress"` | Posts to the `brh_booking` handler in `functions.php`; `wp_mail()` sends it, so WP Mail SMTP delivers. Same-origin, so CORS can never bite, and the destination stays server-side. Can also relay to GHL. | Add the PHP snippet |
+| `"formsubmit"` | Posts to FormSubmit, which emails the address. | One-time activation click |
+| `"mailto"` | No POST — opens the customer's mail app with the quote pre-filled. | None |
+
+**Whatever you choose, a failed send falls back to the pre-filled mailto** to
+bigrichhauling@att.net and shows the phone number, so a lead is never silently lost.
+
+---
+
+## GoHighLevel setup (the shipped default)
+
+This is the least work and gives you the most: the lead lands in your CRM *and* GHL sends the email
+to bigrichhauling@att.net, so you don't need FormSubmit or the `functions.php` snippet at all.
+
+### 1. Create the workflow trigger
+
+In GHL: **Automation → Workflows → + Create Workflow → Start from scratch**, then add the trigger
+**Inbound Webhook**. Copy the webhook URL it shows you (it looks like
+`https://services.leadconnectorhq.com/hooks/<locationId>/webhook-trigger/<uuid>`).
+
+### 2. Paste it into the widget
+
+In `BRH_CONFIG.submit`:
+
+```js
+provider      : "ghl",
+ghlWebhookUrl : "https://services.leadconnectorhq.com/hooks/…/webhook-trigger/…",
+```
+
+Re-paste the file into the Elementor HTML widget. **Until that URL is filled in, every booking
+quietly falls back to the email** — `python3 verify.py` prints an "ACTION REQUIRED" line while it's
+empty, and the browser console warns too.
+
+### 3. Send one test booking
+
+GHL only learns the field names after it has actually received a payload, so submit one real test
+booking through the widget now. Then reopen the trigger and you'll see every field available for
+mapping.
+
+### 4. Build the workflow
+
+Add these actions:
+
+1. **Create/Update Contact** — map the incoming fields:
+
+   | GHL contact field | Webhook field |
+   |---|---|
+   | First Name | `first_name` |
+   | Last Name | `last_name` |
+   | Email | `email` |
+   | Phone | `phone` |
+   | Address | `address1` |
+   | City | `city` |
+   | Postal Code | `postal_code` |
+   | State | `state` |
+   | Source | `source` |
+
+2. **Send Internal Notification** (Email) to `bigrichhauling@att.net` — this is the part that
+   replaces the old email path. Reference any field with the
+   `{{inboundWebhookRequest.<field>}}` token, e.g.:
+
+   ```
+   Subject: New estimate — {{inboundWebhookRequest.estimated_total}} — {{inboundWebhookRequest.full_name}} ({{inboundWebhookRequest.city}})
+
+   {{inboundWebhookRequest.quote_summary}}
+   ```
+
+   `quote_summary` is the whole formatted quote — name, phone, address, pickup date and window,
+   every item with its price, the subtotal, the minimum adjustment, the total and the disclaimer —
+   so that single token is enough for a complete notification email.
+
+3. *(Optional)* **Create Opportunity** in a pipeline, using `estimated_value` as the monetary value.
+   It's sent as a bare number (e.g. `95`) precisely so GHL accepts it, alongside the formatted
+   `estimated_total` (`"$95.00"`) for use in emails and SMS.
+
+4. *(Optional)* **Send SMS / Email to the customer** confirming the request, and add a tag like
+   `website-estimator` so you can segment these leads.
+
+### Fields sent to GHL
+
+All flat and snake_case, because Inbound Webhook mapping struggles with nested objects:
+
+| Field | Example |
+|---|---|
+| `source` | `Website Estimator` |
+| `full_name` / `first_name` / `last_name` | `Maria De La Cruz` / `Maria` / `De La Cruz` |
+| `email`, `phone` | `maria@example.com`, `(916) 555-0177` |
+| `address1`, `city`, `postal_code`, `state` | `44 Oak Ave`, `Roseville`, `95661`, `CA` |
+| `preferred_date`, `preferred_date_iso`, `preferred_window` | `Sat, Sep 5, 2026`, `2026-09-05`, `7:00 AM – 9:00 AM` |
+| `item_count`, `cubic_yards` | `1`, `3` |
+| `items_subtotal`, `minimum_adjustment`, `estimated_total` | `$120.00`, `` (empty when none), `$120.00` |
+| `estimated_value` | `120` — bare number, for opportunity value |
+| `extra_labor` | `Items are upstairs or downstairs; Long carry or tight access` |
+| `itemized_list` | `1 x Sofa - 3 cushion — $120.00` (one per line) |
+| `customer_notes` | whatever the customer typed |
+| `quote_summary` | the entire formatted quote as plain text |
+
+The surname split takes the **first** word as the given name and everything after it as the surname,
+so multi-word surnames survive.
+
+### If leads don't reach GHL
+
+The widget posts straight from the visitor's browser, so a cross-origin POST is involved. If GHL
+refuses it at the CORS layer, the widget automatically retries as a CORS-simple request (no preflight,
+response hidden) so the lead still lands, and only falls back to email if that fails too.
+
+If bookings still don't appear in GHL, route them through WordPress instead — no CORS involved at all,
+and it keeps the webhook URL out of your page source. Set `provider: "wordpress"`, add the snippet
+below, and have the PHP forward to GHL server-side by inserting this before the `wp_mail()` call:
+
+```php
+    // relay the booking into GoHighLevel, server-side
+    wp_remote_post( 'https://services.leadconnectorhq.com/hooks/…/webhook-trigger/…', array(
+        'headers'  => array( 'Content-Type' => 'application/json' ),
+        'body'     => wp_json_encode( $data ),
+        'timeout'  => 15,
+        'blocking' => false,
+    ) );
+```
+
+> **One caveat about the webhook URL:** because the widget is client-side, the URL is visible in the
+> page source. It is write-only — it can only start your workflow, not read anything out of GHL — so
+> the worst case is junk contacts, which the honeypot and a GHL filter step handle. Never put a GHL
+> **API key or private-integration token** in the widget; that would be readable by anyone. If you
+> want the URL hidden entirely, use the WordPress relay above.
+
+---
+
+## FormSubmit (no code, no CRM)
+
+With `provider: "formsubmit"` the booking posts to [FormSubmit](https://formsubmit.co), which
+forwards it to `submit.email`:
 
 > ⚠️ **One-time activation.** The very first booking triggers an activation email from FormSubmit to
 > bigrichhauling@att.net. Click the link in it once, and every later booking arrives automatically.
@@ -68,11 +201,7 @@ cubic yards, items subtotal, minimum adjustment, extra-labor flags, estimated to
 itemized list and the customer's notes. With `autoReply: true` the customer also gets a confirmation
 copy. Replies go straight to the customer's address.
 
-**If the POST ever fails**, the widget automatically opens the customer's mail app with the entire
-quote pre-filled and addressed to bigrichhauling@att.net, and shows the phone number — the lead is
-never silently lost.
-
-### Recommended: send through WordPress (works with WP Mail SMTP)
+## WordPress / WP Mail SMTP (alternative, or as a GHL relay)
 
 If the site runs **WP Mail SMTP**, this is the better path — that plugin intercepts `wp_mail()`
 itself, so the snippet below needs no plugin-specific code and every booking goes out over your own
@@ -152,16 +281,9 @@ function brh_handle_booking() {
 }
 ```
 
-**Step 2.** In the widget's `BRH_CONFIG`, swap the two `endpoint` lines — uncomment the
-admin-ajax one and delete (or comment out) the FormSubmit one:
-
-```js
-   endpoint   : "/wp-admin/admin-ajax.php?action=brh_booking",
-// endpoint   : "https://formsubmit.co/ajax/bigrichhauling@att.net",
-```
-
-Keep it as a **relative path**. That way it always resolves against whatever host the page is on, so
-a www / non-www mismatch can never trip CORS.
+**Step 2.** In the widget's `BRH_CONFIG.submit`, set `provider: "wordpress"`. Leave
+`wordpressUrl` as the **relative path** it ships with — that way it always resolves against whatever
+host the page is on, so a www / non-www mismatch can never trip CORS.
 
 **Step 3.** In WP Mail SMTP, set *From Email* to an address on your own domain
 (e.g. `no-reply@bigrichhauling.com`) and leave *Force From Email* on. The snippet sets Reply-To to
@@ -227,8 +349,8 @@ Two more notes:
 
 ### Or skip sending entirely
 
-**`submitMode: "mailto"`** always opens the customer's own mail app with the quote pre-filled and
-addressed to `submitTo`. Zero dependencies, but it relies on the customer pressing send.
+**`provider: "mailto"`** always opens the customer's own mail app with the quote pre-filled and
+addressed to `submit.email`. Zero dependencies, but it relies on the customer pressing send.
 
 ### Spam protection
 
@@ -248,10 +370,13 @@ All of them live in the `BRH_CONFIG` block near the top of the `<script>` in the
 | `ratePerCubicYard` | `40` | Master price list basis. |
 | `minimumCharge` | `95` | Applied to every job. Set `0` to disable — a $2 toaster then quotes as $2. |
 | `phone` / `phoneDial` | `916-252-9500` | Display text and the `tel:` number. |
-| `submitMode` | `"endpoint"` | `"endpoint"` posts the booking; `"mailto"` opens the customer's mail app. |
-| `submitTo` | `bigrichhauling@att.net` | Where bookings land (also the mailto fallback address). |
-| `endpoint` | FormSubmit URL | Swap for your own webhook or the WordPress handler above. |
-| `autoReply` | `true` | Emails the customer a confirmation copy of their quote. |
+| `submit.provider` | `"ghl"` | `"ghl"` / `"wordpress"` / `"formsubmit"` / `"mailto"` — see the table above. |
+| `submit.ghlWebhookUrl` | `""` | **Paste your GHL Inbound Webhook URL here.** Empty = falls back to email. |
+| `submit.wordpressUrl` | `/wp-admin/admin-ajax.php?action=brh_booking` | Relative on purpose, so www / non-www cannot trip CORS. |
+| `submit.formsubmitUrl` | FormSubmit URL | Only used by the `formsubmit` provider. |
+| `submit.email` | `bigrichhauling@att.net` | The mailto-fallback destination, and FormSubmit's target. |
+| `submit.leadSource` | `"Website Estimator"` | Stamped on the GHL contact as its source. |
+| `submit.autoReply` | `true` | Customer confirmation copy (formsubmit / wordpress only — with GHL, do it in the workflow). |
 | `cities` | 21 entries | The City / area dropdown. |
 | `windows` | 6 entries | The pickup windows on the Schedule step. |
 | `accessFlags` | 4 entries | Extra-labor checkboxes. Give one a `pct` (e.g. `pct:10`) to price it automatically — it then appears as its own breakdown line. |
@@ -293,10 +418,15 @@ This was a main design constraint, so it is handled defensively:
   in the widget (it fails if a rule is added to the sheet and not handled).
 - **Category Summary** — per-category item count, lowest price and highest price.
 - **dist/big-rich-quote-calculator.html** — item count, item IDs, the configured rate, the minimum
-  charge and the on-screen copy that quotes it, the booking destination, and the pickup windows.
+  charge and the on-screen copy that quotes it, the pickup windows, and the submit provider (that it
+  is a known one, that its URL is filled in, and that a mailto fallback address exists).
+
+Config gaps are reported separately as **ACTION REQUIRED** rather than failing the check, since they
+mean "correct build, not wired up yet" rather than "data mismatch". An empty `ghlWebhookUrl` shows up
+there until you paste it in.
 
 Current state: all 20 categories reconcile, 640/640 items, rate $40.00, $95 minimum,
-bookings to bigrichhauling@att.net.
+provider `ghl` (webhook URL still to be pasted), mailto fallback to bigrichhauling@att.net.
 
 ---
 

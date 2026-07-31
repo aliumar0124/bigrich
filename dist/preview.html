@@ -506,29 +506,38 @@
     phoneDial        : "+19162529500",
     businessName     : "Big Rich Hauling & Junk Removal",
 
-    /* ---- where a confirmed booking is sent -------------------------------
-       mode "endpoint": POSTs the booking to `endpoint`, which emails `email`.
-                        The default endpoint is FormSubmit, which needs a
-                        ONE-TIME activation: the first booking triggers an
-                        activation email to the address below — click the link
-                        in it and every later booking arrives automatically.
-       mode "mailto":   skips the POST and opens the customer's mail app with
-                        the whole quote pre-filled, addressed to `email`.
-       If the POST fails for any reason, the widget automatically falls back to
-       the mailto so the lead is never lost.  See README.md for the WordPress
-       (wp_mail / WPForms) alternative if you'd rather not use a third party. */
-    submitMode : "endpoint",
-    submitTo   : "bigrichhauling@att.net",
+    /* ---- WHERE A CONFIRMED BOOKING GOES ---------------------------------
+       Set `provider` to one of:
 
-    /* RECOMMENDED if you run WP Mail SMTP: add the brh_booking snippet from
-       README.md to functions.php, then swap the two lines below. Keep it a
-       relative path so www / non-www can never trip CORS. wp_mail() is what
-       WP Mail SMTP intercepts, so bookings go out over your own SMTP and no
-       third party ever sees a lead. */
- // endpoint   : "/wp-admin/admin-ajax.php?action=brh_booking",
-    endpoint   : "https://formsubmit.co/ajax/bigrichhauling@att.net",
+       "ghl"        Posts to a GoHighLevel Inbound Webhook (workflow trigger).
+                    The lead becomes a GHL contact/opportunity, and the GHL
+                    workflow emails bigrichhauling@att.net. Paste your webhook
+                    URL into ghlWebhookUrl. See README.md for the workflow
+                    setup and the exact field tokens to map.
 
-    autoReply  : true,              // send the customer a copy/confirmation
+       "wordpress"  Posts to the brh_booking handler you add to functions.php
+                    (README.md has it). wp_mail() sends it, so WP Mail SMTP
+                    handles delivery. Same-origin, so CORS can never bite, and
+                    the destination stays server-side. Can also forward to GHL.
+
+       "formsubmit" Posts to FormSubmit, which emails `email`. No code needed,
+                    but the FIRST booking triggers a one-time activation email
+                    to that address which somebody must click.
+
+       "mailto"     No POST at all — opens the customer's mail app with the
+                    whole quote pre-filled, addressed to `email`.
+
+       Whatever you pick, a failed send falls back to the pre-filled mailto so
+       a lead is never silently lost. */
+    submit: {
+      provider      : "ghl",
+      ghlWebhookUrl : "",   // <-- PASTE your GHL Inbound Webhook URL here
+      wordpressUrl  : "/wp-admin/admin-ajax.php?action=brh_booking",
+      formsubmitUrl : "https://formsubmit.co/ajax/bigrichhauling@att.net",
+      email         : "bigrichhauling@att.net",  // mailto fallback + FormSubmit target
+      leadSource    : "Website Estimator",       // stamped on the GHL contact
+      autoReply     : true                       // customer copy (formsubmit/wordpress only)
+    },
 
     // Cities offered in the "City / area" dropdown.
     cities: ["Sacramento","Elk Grove","Roseville","Folsom","Citrus Heights","Rancho Cordova",
@@ -853,15 +862,55 @@
       message: summaryText()
     };
   }
+  /* GoHighLevel payload. Deliberately FLAT and snake_case: an Inbound Webhook
+     workflow references each key as {{inboundWebhookRequest.key}}, and nested
+     objects are painful to map. Names are split because GHL contacts store
+     first/last separately, and the total is sent twice — formatted for emails
+     and as a bare number for an opportunity's monetary value. */
+  function ghlPayload(){
+    var t = totals(), d = state.details;
+    var name = d.name.trim().replace(/\s+/g," ");
+    /* First token is the given name, everything after it is the surname, so
+       "Maria De La Cruz" splits to Maria / De La Cruz rather than losing part
+       of a multi-word surname. */
+    var cut = name.indexOf(" ");
+    return {
+      source            : CFG.submit.leadSource,
+      full_name         : name,
+      first_name        : cut > 0 ? name.slice(0, cut) : name,
+      last_name         : cut > 0 ? name.slice(cut + 1) : "",
+      email             : d.email,
+      phone             : d.phone,
+      address1          : d.address,
+      city              : d.city,
+      postal_code       : d.zip,
+      state             : "CA",
+      preferred_date    : d.date ? niceDate(d.date) : "",
+      preferred_date_iso: d.date,
+      preferred_window  : d.window,
+      item_count        : t.count,
+      cubic_yards       : t.volume,
+      items_subtotal    : money(t.itemsTotal),
+      minimum_adjustment: t.minAdj > 0 ? money(t.minAdj) : "",
+      estimated_total   : money(t.total),
+      estimated_value   : t.total,                 // bare number for opportunity value
+      extra_labor       : t.flagLines.map(function(f){ return f.flag.label; }).join("; "),
+      itemized_list     : t.lines.map(function(l){ return l.qty + " x " + l.item.name + " — " + money(l.total); }).join("\n"),
+      customer_notes    : d.notes,
+      quote_summary     : summaryText()
+    };
+  }
   /* Cheap bot filters for our own handler: an off-screen field a human never
-     fills, and how long the form took. FormSubmit would render both as rows in
-     the email, so they are only sent to a self-hosted endpoint. */
+     fills, and how long the form took. Only the WordPress handler enforces
+     them server-side; the other providers would just render them as noise. */
   function withSpamGuard(body){
-    if(/formsubmit\.co/i.test(CFG.endpoint)) return body;
-    var hp = q("[data-brh-hp]");
-    body._hp = hp ? hp.value : "";
+    body._hp = honeypot();
     body._elapsed = Math.round((Date.now() - LOADED_AT) / 1000);
     return body;
+  }
+  function honeypot(){
+    var hp = q("[data-brh-hp]");
+    return hp ? hp.value : "";
   }
 
   /* ---------- validation ---------- */
@@ -1031,47 +1080,90 @@
   }
 
   /* ---------- submit ---------- */
+  /* Resolve the provider into a URL + body. Returns null for "mailto" (or for a
+     misconfigured provider) so the caller just opens the mail app. */
+  function destination(){
+    var s = CFG.submit, p = (s.provider || "mailto").toLowerCase();
+    if(p === "ghl"){
+      if(!s.ghlWebhookUrl){
+        if(window.console) console.warn("[Big Rich estimator] submit.provider is \"ghl\" but ghlWebhookUrl is empty — falling back to email.");
+        return null;
+      }
+      return { url:s.ghlWebhookUrl, body:ghlPayload(), kind:"ghl" };
+    }
+    if(p === "wordpress") return { url:s.wordpressUrl,  body:withSpamGuard(payload()), kind:"wordpress" };
+    if(p === "formsubmit") return { url:s.formsubmitUrl, body:formsubmitPayload(),      kind:"formsubmit" };
+    return null;
+  }
+  function formsubmitPayload(){
+    var body = payload();
+    if(CFG.submit.autoReply){
+      body._autoresponse = "Thanks " + (state.details.name || "") + "! We received your junk removal request. " +
+        "Your estimated total is " + money(totals().total) + ", based on the items you entered. " +
+        "We'll call you shortly to confirm your pickup window. Questions? Call " + CFG.phone + ".\n\n" + summaryText();
+    }
+    return body;
+  }
   function confirmBooking(btn){
     if(state.booked) return;
     if(!validate(2) || !validate(3)){
       msg("Please complete your information before confirming.", "err");
       return;
     }
-    if(CFG.submitMode === "mailto"){ mailtoFallback(); return; }
+    /* A filled honeypot means a bot. Show the normal success state so it learns
+       nothing, and send nothing anywhere. */
+    if(honeypot()){
+      state.booked = true;
+      btn.innerHTML = "Booking request sent ✓";
+      btn.setAttribute("disabled","disabled");
+      return;
+    }
+    var dest = destination();
+    if(!dest){ mailtoFallback(); return; }
 
     var label = btn.innerHTML;
     btn.setAttribute("disabled","disabled");
     btn.innerHTML = "Sending…";
-    var body = withSpamGuard(payload());
-    if(CFG.autoReply){
-      body._autoresponse = "Thanks " + (state.details.name || "") + "! We received your junk removal request. " +
-        "Your estimated total is " + money(totals().total) + ", based on the items you entered. " +
-        "We'll call you shortly to confirm your pickup window. Questions? Call " + CFG.phone + ".\n\n" + summaryText();
-    }
-    fetch(CFG.endpoint, {
+    var json = JSON.stringify(dest.body);
+
+    fetch(dest.url, {
       method:"POST",
       headers:{ "Content-Type":"application/json", "Accept":"application/json" },
-      body:JSON.stringify(body)
+      body:json
     }).then(function(r){
       if(!r.ok) throw new Error("HTTP " + r.status);
-      return r.json().catch(function(){ return {}; });
-    }).then(function(){
-      state.booked = true;
-      btn.innerHTML = "Booking request sent ✓";
-      msg("Thank you! Your request is in — we'll call " + (state.details.phone || "you") +
-          " shortly to confirm your pickup. Need it sooner? Call " + CFG.phone + ".");
-    }).catch(function(){
-      btn.removeAttribute("disabled");
-      btn.innerHTML = label;
-      msg("We couldn't send that automatically. Opening your email app with the quote attached instead — " +
-          "or just call " + CFG.phone + ".", "err");
-      setTimeout(mailtoFallback, 900);
-    });
+      return r.text().catch(function(){ return ""; });
+    }).then(function(){ succeed(btn); })
+      .catch(function(){
+        /* A cross-origin POST can be refused at the CORS layer even when the
+           receiver would have accepted the data. Retry once as a CORS-simple
+           request: the browser sends it without a preflight and hides the
+           response, so the lead still lands. If even that throws, fall back to
+           email. Only worth trying for a third-party receiver. */
+        if(dest.kind === "wordpress"){ failToEmail(btn, label); return; }
+        fetch(dest.url, { method:"POST", mode:"no-cors",
+          headers:{ "Content-Type":"text/plain;charset=UTF-8" }, body:json })
+          .then(function(){ succeed(btn); })
+          .catch(function(){ failToEmail(btn, label); });
+      });
+  }
+  function succeed(btn){
+    state.booked = true;
+    btn.innerHTML = "Booking request sent ✓";
+    msg("Thank you! Your request is in — we'll call " + (state.details.phone || "you") +
+        " shortly to confirm your pickup. Need it sooner? Call " + CFG.phone + ".");
+  }
+  function failToEmail(btn, label){
+    btn.removeAttribute("disabled");
+    btn.innerHTML = label;
+    msg("We couldn't send that automatically. Opening your email app with the quote attached instead — " +
+        "or just call " + CFG.phone + ".", "err");
+    setTimeout(mailtoFallback, 900);
   }
   function mailtoFallback(){
     var t = totals(), d = state.details;
     var subject = "Junk removal booking request — " + money(t.total) + " — " + (d.name || "website");
-    window.location.href = "mailto:" + encodeURIComponent(CFG.submitTo) +
+    window.location.href = "mailto:" + encodeURIComponent(CFG.submit.email) +
       "?subject=" + encodeURIComponent(subject) + "&body=" + encodeURIComponent(summaryText());
   }
   function msg(text, kind){
