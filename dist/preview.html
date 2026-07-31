@@ -1,0 +1,1066 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Big Rich Hauling — quote calculator preview</title>
+<style>body{margin:0;padding:28px 16px;background:#EEF0F2;}</style>
+</head>
+<body>
+<!--
+  ============================================================================
+  BIG RICH HAULING — INSTANT QUOTE CALCULATOR
+  Self-contained widget for the Elementor "HTML" widget.
+
+  HOW TO INSTALL
+    1. Edit the page in Elementor.
+    2. Drag in the "HTML" widget (Elementor > General > HTML).
+    3. Paste the ENTIRE contents of dist/big-rich-quote-calculator.html
+       into the "HTML Code" box. Update, done.
+
+  NOTES
+    * No external files, fonts, images or libraries are loaded.
+    * Every CSS declaration carries !important and every selector is scoped
+      under #brh-quote, so Elementor / theme global styles cannot override it
+      and this widget cannot leak styles onto the rest of the page.
+    * All business settings (rate, minimum, phone, add-ons, webhook) live in
+      the BRH_CONFIG block at the top of the <script> below.
+    * The item list is generated from
+      Big_Rich_Hauling_Master_Household_Item_Price_List.xlsx by build.py.
+      Do not hand-edit the generated data block — re-run build.py instead.
+  ============================================================================
+-->
+<div id="brh-quote" class="brh-root" role="region" aria-label="Big Rich Hauling instant quote calculator">
+<style>
+/* ===== scoped reset ==================================================== */
+#brh-quote,#brh-quote *,#brh-quote *::before,#brh-quote *::after{box-sizing:border-box!important;}
+#brh-quote{
+  /* ---- BRAND COLORS (bigrichhauling.com) ---- */
+  --brh-red:#D5291B!important;
+  --brh-red-dk:#AE1F12!important;
+  --brh-red-soft:#FDEDEB!important;
+  --brh-gold:#C4A052!important;
+  --brh-gold-dk:#A5843C!important;
+  --brh-gold-soft:#FBF4E6!important;
+  --brh-ink:#23282D!important;
+  --brh-ink-2:#5C6670!important;
+  --brh-ink-3:#8A949E!important;
+  --brh-line:#E2E6EA!important;
+  --brh-bg:#FFFFFF!important;
+  --brh-bg-2:#F5F6F8!important;
+  --brh-ok:#1E8A4C!important;
+  --brh-radius:14px!important;
+  --brh-shadow:0 2px 4px rgba(16,20,24,.04),0 12px 32px rgba(16,20,24,.09)!important;
+  --brh-font:"Poppins","Montserrat",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji"!important;
+  display:block!important;width:100%!important;max-width:1140px!important;margin:0 auto!important;padding:0!important;
+  font-family:var(--brh-font)!important;font-size:16px!important;font-weight:400!important;line-height:1.5!important;
+  color:var(--brh-ink)!important;text-align:left!important;letter-spacing:normal!important;text-transform:none!important;
+  -webkit-font-smoothing:antialiased!important;
+}
+/* Universal in-scope reset: neutralises anything a theme / Elementor global
+   style pushes onto our descendants. Every component rule below is a class or
+   id selector, so it outranks this and still wins. */
+#brh-quote *{
+  font-family:var(--brh-font)!important;font-size:inherit!important;font-weight:inherit!important;
+  font-style:normal!important;line-height:inherit!important;letter-spacing:normal!important;
+  text-transform:none!important;text-decoration:none!important;text-shadow:none!important;
+  text-align:inherit!important;color:inherit!important;-webkit-text-fill-color:currentColor!important;
+  background-color:transparent!important;border:0 none!important;margin:0!important;padding:0!important;
+  box-shadow:none!important;float:none!important;
+}
+/* Width neutralising is listed per element on purpose: a universal width:auto
+   would override the width/height *attributes* of SVG shapes and collapse the
+   icons. Keep this rule above the input/table rules that set width:100%. */
+#brh-quote div,#brh-quote span,#brh-quote p,#brh-quote a,#brh-quote button,#brh-quote label,
+#brh-quote section,#brh-quote header,#brh-quote aside,#brh-quote main,#brh-quote ol,#brh-quote ul,
+#brh-quote li,#brh-quote small,#brh-quote b,#brh-quote strong,#brh-quote em,#brh-quote i,
+#brh-quote h2,#brh-quote h3,#brh-quote h4,#brh-quote caption,#brh-quote td{
+  width:auto!important;max-width:100%!important;min-width:0!important;min-height:0!important;
+}
+#brh-quote b,#brh-quote strong{font-weight:800!important;}
+#brh-quote ::placeholder{color:var(--brh-ink-3)!important;opacity:1!important;}
+#brh-quote h2,#brh-quote h3,#brh-quote h4,#brh-quote p,#brh-quote ul,#brh-quote ol,#brh-quote li,
+#brh-quote figure,#brh-quote table,#brh-quote label,#brh-quote fieldset,#brh-quote legend{
+  margin:0!important;padding:0!important;border:0!important;background:none!important;list-style:none!important;
+  font-family:inherit!important;color:inherit!important;text-transform:none!important;letter-spacing:normal!important;
+}
+#brh-quote h2{font-size:1.55rem!important;line-height:1.2!important;font-weight:800!important;}
+#brh-quote h3{font-size:1.05rem!important;line-height:1.3!important;font-weight:800!important;}
+#brh-quote h4{font-size:.95rem!important;line-height:1.3!important;font-weight:700!important;}
+#brh-quote button{
+  -webkit-appearance:none!important;appearance:none!important;margin:0!important;padding:0!important;border:0!important;
+  background:transparent!important;box-shadow:none!important;border-radius:0!important;font-family:inherit!important;
+  font-size:1rem!important;font-weight:600!important;line-height:1.2!important;color:inherit!important;cursor:pointer!important;
+  text-transform:none!important;letter-spacing:normal!important;text-decoration:none!important;text-shadow:none!important;
+  min-height:0!important;min-width:0!important;width:auto!important;transition:background-color .15s ease,border-color .15s ease,color .15s ease,box-shadow .15s ease,transform .1s ease!important;
+}
+#brh-quote a{text-decoration:none!important;color:inherit!important;box-shadow:none!important;background:none!important;}
+#brh-quote input,#brh-quote select,#brh-quote textarea{
+  -webkit-appearance:none!important;appearance:none!important;font-family:inherit!important;font-size:1rem!important;
+  font-weight:500!important;line-height:1.4!important;color:var(--brh-ink)!important;background-color:#fff!important;
+  border:1.5px solid var(--brh-line)!important;border-radius:10px!important;padding:11px 13px!important;margin:0!important;
+  width:100%!important;max-width:100%!important;height:auto!important;min-height:0!important;box-shadow:none!important;
+  text-transform:none!important;letter-spacing:normal!important;
+}
+#brh-quote select{background-image:url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235C6670' stroke-width='2.5' stroke-linecap='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")!important;background-repeat:no-repeat!important;background-position:right 11px center!important;background-size:17px 17px!important;padding-right:38px!important;}
+#brh-quote input:focus,#brh-quote select:focus,#brh-quote textarea:focus{outline:0!important;border-color:var(--brh-red)!important;box-shadow:0 0 0 3px rgba(213,41,27,.15)!important;}
+#brh-quote button:focus-visible,#brh-quote a:focus-visible,#brh-quote input:focus-visible,#brh-quote select:focus-visible,#brh-quote textarea:focus-visible{outline:3px solid rgba(213,41,27,.45)!important;outline-offset:2px!important;}
+#brh-quote svg{display:block!important;width:1em!important;height:1em!important;flex:0 0 auto!important;fill:none!important;stroke:currentColor!important;stroke-width:2.2!important;stroke-linecap:round!important;stroke-linejoin:round!important;}
+#brh-quote table{border-collapse:collapse!important;width:100%!important;}
+
+/* ===== shell =========================================================== */
+#brh-quote .brh-shell{background:var(--brh-bg)!important;border:1px solid var(--brh-line)!important;border-radius:var(--brh-radius)!important;box-shadow:var(--brh-shadow)!important;}
+#brh-quote .brh-head{border-radius:calc(var(--brh-radius) - 1px) calc(var(--brh-radius) - 1px) 0 0!important;display:flex!important;flex-wrap:wrap!important;align-items:center!important;justify-content:space-between!important;gap:14px!important;padding:20px 24px!important;background:linear-gradient(103deg,var(--brh-red) 0%,var(--brh-red-dk) 100%)!important;}
+#brh-quote .brh-head h2{color:#fff!important;text-transform:uppercase!important;letter-spacing:.4px!important;}
+#brh-quote .brh-head p{color:rgba(255,255,255,.92)!important;font-size:.92rem!important;font-weight:500!important;margin-top:5px!important;}
+#brh-quote .brh-head-call{display:inline-flex!important;align-items:center!important;gap:9px!important;background:var(--brh-gold)!important;color:#fff!important;font-weight:800!important;font-size:1rem!important;padding:12px 20px!important;border-radius:999px!important;white-space:nowrap!important;box-shadow:0 3px 10px rgba(0,0,0,.18)!important;transition:background-color .15s ease!important;}
+#brh-quote .brh-head-call:hover{background:var(--brh-gold-dk)!important;}
+#brh-quote .brh-head-call svg{width:1.05em!important;height:1.05em!important;}
+
+/* ===== stepper ========================================================= */
+#brh-quote .brh-steps{display:flex!important;align-items:stretch!important;background:var(--brh-bg-2)!important;border-bottom:1px solid var(--brh-line)!important;overflow-x:auto!important;-webkit-overflow-scrolling:touch!important;}
+#brh-quote .brh-steps li{flex:1 1 0!important;min-width:132px!important;}
+#brh-quote .brh-step{display:flex!important;align-items:center!important;gap:10px!important;width:100%!important;padding:14px 12px!important;text-align:left!important;color:var(--brh-ink-2)!important;font-weight:700!important;font-size:.88rem!important;border-bottom:3px solid transparent!important;}
+#brh-quote .brh-step-n{display:inline-flex!important;align-items:center!important;justify-content:center!important;width:26px!important;height:26px!important;border-radius:999px!important;background:#fff!important;border:1.5px solid var(--brh-line)!important;font-size:.8rem!important;font-weight:800!important;color:var(--brh-ink-3)!important;flex:0 0 auto!important;}
+#brh-quote .brh-step-n svg{width:.85em!important;height:.85em!important;stroke-width:3!important;}
+#brh-quote .brh-step[data-state="done"]{color:var(--brh-ink)!important;}
+#brh-quote .brh-step[data-state="done"] .brh-step-n{background:var(--brh-gold)!important;border-color:var(--brh-gold)!important;color:#fff!important;}
+#brh-quote .brh-step[data-state="active"]{color:var(--brh-red)!important;background:#fff!important;border-bottom-color:var(--brh-red)!important;}
+#brh-quote .brh-step[data-state="active"] .brh-step-n{background:var(--brh-red)!important;border-color:var(--brh-red)!important;color:#fff!important;}
+#brh-quote .brh-step[disabled]{cursor:not-allowed!important;opacity:.75!important;}
+
+/* ===== layout ========================================================== */
+#brh-quote .brh-body{display:grid!important;grid-template-columns:minmax(0,1fr) 330px!important;align-items:start!important;}
+#brh-quote .brh-main{padding:22px 24px 26px!important;min-width:0!important;}
+#brh-quote .brh-side{position:sticky!important;top:18px!important;padding:22px 24px 26px 0!important;}
+#brh-quote .brh-panel-head{margin-bottom:16px!important;}
+#brh-quote .brh-panel-head h3{font-size:1.18rem!important;}
+#brh-quote .brh-panel-head p{color:var(--brh-ink-2)!important;font-size:.9rem!important;margin-top:4px!important;}
+
+/* ===== search + categories ============================================= */
+#brh-quote .brh-search{position:relative!important;margin-bottom:14px!important;}
+#brh-quote .brh-search svg{position:absolute!important;left:13px!important;top:50%!important;transform:translateY(-50%)!important;width:1.1em!important;height:1.1em!important;color:var(--brh-ink-3)!important;pointer-events:none!important;}
+#brh-quote .brh-search input{padding-left:40px!important;padding-right:40px!important;background:var(--brh-bg-2)!important;}
+#brh-quote .brh-search-clear{position:absolute!important;right:8px!important;top:50%!important;transform:translateY(-50%)!important;width:28px!important;height:28px!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;border-radius:999px!important;color:var(--brh-ink-2)!important;}
+#brh-quote .brh-search-clear:hover{background:var(--brh-line)!important;}
+#brh-quote .brh-cats{display:flex!important;gap:8px!important;overflow-x:auto!important;padding-bottom:10px!important;margin-bottom:6px!important;-webkit-overflow-scrolling:touch!important;scrollbar-width:thin!important;}
+#brh-quote .brh-cats::-webkit-scrollbar{height:6px!important;}
+#brh-quote .brh-cats::-webkit-scrollbar-thumb{background:var(--brh-line)!important;border-radius:99px!important;}
+#brh-quote .brh-cat{display:inline-flex!important;align-items:center!important;gap:7px!important;flex:0 0 auto!important;white-space:nowrap!important;padding:9px 15px!important;border-radius:999px!important;background:var(--brh-bg-2)!important;border:1.5px solid var(--brh-line)!important;color:var(--brh-ink-2)!important;font-size:.86rem!important;font-weight:700!important;}
+#brh-quote .brh-cat:hover{border-color:var(--brh-gold)!important;color:var(--brh-ink)!important;}
+#brh-quote .brh-cat[aria-selected="true"]{background:var(--brh-red)!important;border-color:var(--brh-red)!important;color:#fff!important;}
+#brh-quote .brh-cat-count{display:inline-flex!important;align-items:center!important;justify-content:center!important;min-width:20px!important;height:20px!important;padding:0 5px!important;border-radius:999px!important;background:var(--brh-gold)!important;color:#fff!important;font-size:.72rem!important;font-weight:800!important;}
+#brh-quote .brh-cat[aria-selected="true"] .brh-cat-count{background:#fff!important;color:var(--brh-red)!important;}
+
+/* ===== item rows ======================================================= */
+#brh-quote .brh-items{border:1px solid var(--brh-line)!important;border-radius:12px!important;overflow:hidden!important;}
+#brh-quote .brh-item{display:flex!important;align-items:center!important;gap:12px!important;padding:11px 14px!important;border-top:1px solid var(--brh-line)!important;background:#fff!important;}
+#brh-quote .brh-item:first-child{border-top:0!important;}
+#brh-quote .brh-item[data-picked="1"]{background:var(--brh-gold-soft)!important;}
+#brh-quote .brh-item-txt{flex:1 1 auto!important;min-width:0!important;}
+#brh-quote .brh-item-name{font-size:.94rem!important;font-weight:600!important;color:var(--brh-ink)!important;}
+#brh-quote .brh-item-meta{font-size:.78rem!important;font-weight:500!important;color:var(--brh-ink-3)!important;margin-top:2px!important;}
+#brh-quote .brh-item-price{font-size:.96rem!important;font-weight:800!important;color:var(--brh-red)!important;white-space:nowrap!important;}
+#brh-quote .brh-stepper{display:inline-flex!important;align-items:center!important;gap:0!important;border:1.5px solid var(--brh-line)!important;border-radius:999px!important;background:#fff!important;overflow:hidden!important;flex:0 0 auto!important;}
+#brh-quote .brh-stepper button{width:34px!important;height:34px!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;color:var(--brh-ink)!important;font-size:1.05rem!important;font-weight:800!important;}
+#brh-quote .brh-stepper button:hover:not([disabled]){background:var(--brh-red)!important;color:#fff!important;}
+#brh-quote .brh-stepper button[disabled]{color:var(--brh-ink-3)!important;cursor:not-allowed!important;}
+#brh-quote .brh-stepper-qty{min-width:32px!important;text-align:center!important;font-size:.92rem!important;font-weight:800!important;font-variant-numeric:tabular-nums!important;color:var(--brh-ink)!important;}
+#brh-quote .brh-empty{padding:26px 16px!important;text-align:center!important;color:var(--brh-ink-2)!important;font-size:.92rem!important;font-weight:500!important;}
+
+/* ===== add-ons ========================================================= */
+#brh-quote .brh-addons{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(238px,1fr))!important;gap:12px!important;}
+#brh-quote .brh-addon{display:flex!important;align-items:flex-start!important;gap:11px!important;padding:14px!important;border:1.5px solid var(--brh-line)!important;border-radius:12px!important;background:#fff!important;cursor:pointer!important;transition:border-color .15s ease,background-color .15s ease!important;}
+#brh-quote .brh-addon:hover{border-color:var(--brh-gold)!important;}
+#brh-quote .brh-addon[data-on="1"]{border-color:var(--brh-red)!important;background:var(--brh-red-soft)!important;}
+#brh-quote .brh-check{width:22px!important;height:22px!important;flex:0 0 auto!important;border:1.5px solid var(--brh-line)!important;border-radius:6px!important;background:#fff!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;color:transparent!important;margin-top:1px!important;}
+#brh-quote .brh-addon[data-on="1"] .brh-check,#brh-quote .brh-ack[data-on="1"] .brh-check{background:var(--brh-red)!important;border-color:var(--brh-red)!important;color:#fff!important;}
+#brh-quote .brh-check svg{width:.8em!important;height:.8em!important;stroke-width:3.2!important;}
+#brh-quote .brh-addon-t{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:8px!important;}
+#brh-quote .brh-addon-t span:first-child{font-size:.94rem!important;font-weight:700!important;}
+#brh-quote .brh-pct{background:var(--brh-gold)!important;color:#fff!important;font-size:.74rem!important;font-weight:800!important;padding:2px 8px!important;border-radius:999px!important;white-space:nowrap!important;}
+#brh-quote .brh-addon-d{display:block!important;font-size:.81rem!important;font-weight:500!important;color:var(--brh-ink-2)!important;margin-top:4px!important;}
+
+/* ===== notices ========================================================= */
+#brh-quote .brh-note{display:flex!important;gap:10px!important;padding:13px 15px!important;border-radius:12px!important;background:var(--brh-gold-soft)!important;border:1px solid #EBDCBB!important;font-size:.84rem!important;font-weight:500!important;color:#6C5624!important;margin-top:16px!important;}
+#brh-quote .brh-note svg{width:1.15em!important;height:1.15em!important;color:var(--brh-gold-dk)!important;margin-top:1px!important;}
+#brh-quote .brh-note strong{font-weight:800!important;}
+#brh-quote .brh-note ul{margin-top:6px!important;}
+#brh-quote .brh-note li{position:relative!important;padding-left:13px!important;margin-top:3px!important;}
+#brh-quote .brh-note li::before{content:"•"!important;position:absolute!important;left:0!important;top:0!important;color:var(--brh-gold-dk)!important;}
+
+/* ===== form ============================================================ */
+#brh-quote .brh-grid{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(218px,1fr))!important;gap:14px!important;}
+#brh-quote .brh-field{display:block!important;min-width:0!important;}
+#brh-quote .brh-field.brh-wide{grid-column:1 / -1!important;}
+#brh-quote .brh-field > span{display:block!important;font-size:.82rem!important;font-weight:700!important;color:var(--brh-ink-2)!important;margin-bottom:6px!important;text-transform:uppercase!important;letter-spacing:.4px!important;}
+#brh-quote .brh-field > span em{font-style:normal!important;color:var(--brh-red)!important;}
+#brh-quote .brh-field textarea{min-height:88px!important;resize:vertical!important;}
+#brh-quote .brh-field > .brh-err{display:block!important;font-size:.78rem!important;font-weight:700!important;color:var(--brh-red)!important;margin-top:5px!important;text-transform:none!important;letter-spacing:normal!important;}
+#brh-quote .brh-field[data-invalid="1"] input,#brh-quote .brh-field[data-invalid="1"] select{border-color:var(--brh-red)!important;background:var(--brh-red-soft)!important;}
+#brh-quote .brh-ack{display:flex!important;align-items:flex-start!important;gap:10px!important;margin-top:16px!important;cursor:pointer!important;font-size:.86rem!important;font-weight:500!important;color:var(--brh-ink-2)!important;}
+
+/* ===== summary rail ==================================================== */
+#brh-quote .brh-cart{border:1px solid var(--brh-line)!important;border-radius:12px!important;background:var(--brh-bg-2)!important;overflow:hidden!important;}
+#brh-quote .brh-cart-h{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:8px!important;padding:13px 15px!important;background:var(--brh-ink)!important;color:#fff!important;}
+#brh-quote .brh-cart-h h4{color:#fff!important;text-transform:uppercase!important;letter-spacing:.5px!important;font-size:.84rem!important;}
+#brh-quote .brh-cart-reset{font-size:.76rem!important;font-weight:700!important;color:rgba(255,255,255,.75)!important;text-decoration:underline!important;}
+#brh-quote .brh-cart-reset:hover{color:#fff!important;}
+#brh-quote .brh-cart-list{max-height:264px!important;overflow-y:auto!important;padding:6px 15px!important;}
+#brh-quote .brh-cart-row{display:flex!important;align-items:flex-start!important;gap:8px!important;padding:9px 0!important;border-bottom:1px solid var(--brh-line)!important;font-size:.85rem!important;}
+#brh-quote .brh-cart-row:last-child{border-bottom:0!important;}
+#brh-quote .brh-cart-row .brh-cr-n{flex:1 1 auto!important;min-width:0!important;font-weight:600!important;}
+#brh-quote .brh-cart-row .brh-cr-q{color:var(--brh-ink-3)!important;font-weight:700!important;}
+#brh-quote .brh-cart-row .brh-cr-p{font-weight:800!important;font-variant-numeric:tabular-nums!important;white-space:nowrap!important;}
+#brh-quote .brh-cart-row .brh-cr-x{width:22px!important;height:22px!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;border-radius:999px!important;color:var(--brh-ink-3)!important;flex:0 0 auto!important;}
+#brh-quote .brh-cart-row .brh-cr-x:hover{background:var(--brh-red)!important;color:#fff!important;}
+#brh-quote .brh-cart-empty{padding:20px 15px!important;font-size:.85rem!important;font-weight:500!important;color:var(--brh-ink-2)!important;text-align:center!important;}
+#brh-quote .brh-cart-f{padding:14px 15px!important;border-top:1px solid var(--brh-line)!important;background:#fff!important;}
+#brh-quote .brh-line{display:flex!important;align-items:baseline!important;justify-content:space-between!important;gap:10px!important;font-size:.86rem!important;font-weight:600!important;color:var(--brh-ink-2)!important;margin-bottom:6px!important;}
+#brh-quote .brh-line b{font-weight:800!important;color:var(--brh-ink)!important;font-variant-numeric:tabular-nums!important;}
+#brh-quote .brh-total{display:flex!important;align-items:baseline!important;justify-content:space-between!important;gap:10px!important;padding-top:10px!important;margin-top:6px!important;border-top:2px solid var(--brh-ink)!important;}
+#brh-quote .brh-total span{font-size:.82rem!important;font-weight:800!important;text-transform:uppercase!important;letter-spacing:.5px!important;color:var(--brh-ink-2)!important;}
+#brh-quote .brh-total b{font-size:1.62rem!important;font-weight:800!important;color:var(--brh-red)!important;font-variant-numeric:tabular-nums!important;line-height:1.1!important;}
+#brh-quote .brh-meter{height:8px!important;border-radius:99px!important;background:var(--brh-line)!important;overflow:hidden!important;margin:4px 0 6px!important;}
+#brh-quote .brh-meter i{display:block!important;height:100%!important;width:0%!important;border-radius:99px!important;background:linear-gradient(90deg,var(--brh-gold),var(--brh-red))!important;transition:width .25s ease!important;}
+#brh-quote .brh-meter-t{font-size:.76rem!important;font-weight:600!important;color:var(--brh-ink-3)!important;}
+
+/* ===== buttons ========================================================= */
+#brh-quote .brh-btn{display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:9px!important;padding:13px 22px!important;border-radius:999px!important;font-size:.95rem!important;font-weight:800!important;text-align:center!important;border:2px solid transparent!important;}
+#brh-quote .brh-btn-red{background:var(--brh-red)!important;color:#fff!important;box-shadow:0 3px 10px rgba(213,41,27,.28)!important;}
+#brh-quote .brh-btn-red:hover:not([disabled]){background:var(--brh-red-dk)!important;}
+#brh-quote .brh-btn-gold{background:var(--brh-gold)!important;color:#fff!important;box-shadow:0 3px 10px rgba(196,160,82,.3)!important;}
+#brh-quote .brh-btn-gold:hover:not([disabled]){background:var(--brh-gold-dk)!important;}
+#brh-quote .brh-btn-ghost{background:#fff!important;color:var(--brh-ink)!important;border-color:var(--brh-line)!important;}
+#brh-quote .brh-btn-ghost:hover:not([disabled]){border-color:var(--brh-ink)!important;}
+#brh-quote .brh-btn[disabled]{opacity:.45!important;cursor:not-allowed!important;box-shadow:none!important;}
+#brh-quote .brh-btn-full{width:100%!important;}
+#brh-quote .brh-nav{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:12px!important;margin-top:20px!important;}
+#brh-quote .brh-side .brh-btn{margin-top:12px!important;}
+
+/* ===== quote / result ================================================== */
+#brh-quote .brh-quote-hero{text-align:center!important;padding:26px 20px!important;border-radius:14px!important;background:linear-gradient(103deg,var(--brh-red) 0%,var(--brh-red-dk) 100%)!important;color:#fff!important;}
+#brh-quote .brh-quote-hero small{display:block!important;font-size:.82rem!important;font-weight:700!important;text-transform:uppercase!important;letter-spacing:1.1px!important;color:rgba(255,255,255,.85)!important;}
+#brh-quote .brh-quote-hero .brh-big{display:block!important;font-size:3.1rem!important;font-weight:800!important;line-height:1.05!important;margin:6px 0 2px!important;font-variant-numeric:tabular-nums!important;}
+#brh-quote .brh-quote-hero .brh-range{display:block!important;font-size:.95rem!important;font-weight:600!important;color:rgba(255,255,255,.92)!important;}
+#brh-quote .brh-quote-hero .brh-vol{display:inline-block!important;margin-top:12px!important;background:rgba(0,0,0,.22)!important;border-radius:999px!important;padding:6px 15px!important;font-size:.83rem!important;font-weight:700!important;}
+#brh-quote .brh-bd{margin-top:18px!important;border:1px solid var(--brh-line)!important;border-radius:12px!important;overflow:hidden!important;}
+#brh-quote .brh-bd caption{caption-side:top!important;text-align:left!important;padding:13px 15px!important;background:var(--brh-bg-2)!important;border-bottom:1px solid var(--brh-line)!important;font-size:.82rem!important;font-weight:800!important;text-transform:uppercase!important;letter-spacing:.5px!important;color:var(--brh-ink-2)!important;}
+#brh-quote .brh-bd td{padding:10px 15px!important;border-bottom:1px solid var(--brh-line)!important;font-size:.88rem!important;font-weight:500!important;vertical-align:top!important;}
+#brh-quote .brh-bd td:last-child{text-align:right!important;font-weight:700!important;white-space:nowrap!important;font-variant-numeric:tabular-nums!important;}
+#brh-quote .brh-bd tr:last-child td{border-bottom:0!important;}
+#brh-quote .brh-bd tr.brh-bd-sub td{background:var(--brh-bg-2)!important;font-weight:800!important;}
+#brh-quote .brh-bd tr.brh-bd-tot td{background:var(--brh-ink)!important;color:#fff!important;font-size:1rem!important;font-weight:800!important;}
+#brh-quote .brh-cta{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(196px,1fr))!important;gap:11px!important;margin-top:18px!important;}
+#brh-quote .brh-ok-msg{display:flex!important;gap:10px!important;align-items:flex-start!important;margin-top:16px!important;padding:14px 16px!important;border-radius:12px!important;background:#EAF7EF!important;border:1px solid #BFE4CD!important;color:#15613A!important;font-size:.88rem!important;font-weight:600!important;}
+#brh-quote .brh-ok-msg svg{color:var(--brh-ok)!important;width:1.2em!important;height:1.2em!important;margin-top:1px!important;}
+#brh-quote .brh-fine{margin-top:16px!important;font-size:.78rem!important;font-weight:500!important;color:var(--brh-ink-3)!important;line-height:1.6!important;}
+#brh-quote .brh-fine strong{font-weight:800!important;color:var(--brh-ink-2)!important;}
+
+/* ===== show-more ======================================================= */
+#brh-quote .brh-more{display:block!important;width:100%!important;padding:13px 14px!important;border-top:1px solid var(--brh-line)!important;background:var(--brh-bg-2)!important;color:var(--brh-red)!important;font-size:.88rem!important;font-weight:800!important;text-align:center!important;}
+#brh-quote .brh-more:hover{background:var(--brh-red)!important;color:#fff!important;}
+
+/* ===== mobile total bar ================================================ */
+#brh-quote .brh-mbar{display:none!important;}
+#brh-quote .brh-mbar-t{display:flex!important;flex-direction:column!important;line-height:1.2!important;}
+#brh-quote .brh-mbar-t b{font-size:1.3rem!important;font-weight:800!important;color:var(--brh-red)!important;font-variant-numeric:tabular-nums!important;}
+#brh-quote .brh-mbar-t span{font-size:.76rem!important;font-weight:600!important;color:var(--brh-ink-2)!important;}
+
+/* ===== responsive ====================================================== */
+@media (max-width:980px){
+  #brh-quote .brh-body{grid-template-columns:minmax(0,1fr)!important;}
+  #brh-quote .brh-mbar{display:flex!important;position:sticky!important;bottom:0!important;z-index:6!important;align-items:center!important;justify-content:space-between!important;gap:12px!important;padding:11px 16px!important;background:rgba(255,255,255,.97)!important;border-top:1px solid var(--brh-line)!important;box-shadow:0 -6px 18px rgba(16,20,24,.1)!important;}
+  #brh-quote .brh-mbar .brh-btn{padding:12px 20px!important;flex:0 0 auto!important;}
+  #brh-quote .brh-mbar{border:1px solid var(--brh-line)!important;border-top:0!important;border-radius:0 0 var(--brh-radius) var(--brh-radius)!important;}
+  #brh-quote .brh-shell{border-bottom-left-radius:0!important;border-bottom-right-radius:0!important;}
+  #brh-quote .brh-side{position:static!important;padding:0 18px 20px!important;}
+  #brh-quote .brh-main{padding:18px 18px 6px!important;}
+  #brh-quote .brh-head{padding:18px!important;}
+  #brh-quote h2{font-size:1.35rem!important;}
+}
+@media (max-width:620px){
+  #brh-quote{font-size:15px!important;}
+  #brh-quote .brh-head{flex-direction:column!important;align-items:flex-start!important;}
+  #brh-quote .brh-head-call{width:100%!important;justify-content:center!important;}
+  #brh-quote .brh-step{padding:12px 10px!important;font-size:.8rem!important;}
+  #brh-quote .brh-steps li{min-width:118px!important;}
+  #brh-quote .brh-item{flex-wrap:wrap!important;gap:8px!important;}
+  #brh-quote .brh-item-txt{flex:1 1 100%!important;}
+  #brh-quote .brh-item-price{margin-right:auto!important;}
+  #brh-quote .brh-quote-hero .brh-big{font-size:2.5rem!important;}
+  #brh-quote .brh-nav{flex-direction:column-reverse!important;}
+  #brh-quote .brh-nav .brh-btn{width:100%!important;}
+  #brh-quote .brh-cta{grid-template-columns:1fr!important;}
+}
+
+/* Must stay last: hiding beats every display rule above it on a tie. */
+#brh-quote [hidden]{display:none!important;}
+</style>
+
+  <div class="brh-shell">
+    <header class="brh-head">
+      <div class="brh-head-txt">
+        <h2>Get Your Junk Removal Price</h2>
+        <p>Pick your items, get a real estimate in under a minute — no phone call required.</p>
+      </div>
+      <a class="brh-head-call" data-brh-tel href="#"><svg viewBox="0 0 24 24"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2Z"/></svg><span data-brh-phone>—</span></a>
+    </header>
+
+    <ol class="brh-steps" data-brh-steps>
+      <li><button type="button" class="brh-step" data-brh-goto="1"><span class="brh-step-n">1</span>Your items</button></li>
+      <li><button type="button" class="brh-step" data-brh-goto="2"><span class="brh-step-n">2</span>Access &amp; extras</button></li>
+      <li><button type="button" class="brh-step" data-brh-goto="3"><span class="brh-step-n">3</span>Your details</button></li>
+      <li><button type="button" class="brh-step" data-brh-goto="4"><span class="brh-step-n">4</span>Your estimate</button></li>
+    </ol>
+
+    <div class="brh-body">
+      <main class="brh-main">
+        <!-- STEP 1 -->
+        <section data-brh-panel="1">
+          <div class="brh-panel-head">
+            <h3>What needs to go?</h3>
+            <p>Search or browse by room. Prices are calculated at <b data-brh-rate>—</b> per cubic yard, straight from our master price list.</p>
+          </div>
+          <div class="brh-search">
+            <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+            <input type="search" data-brh-search placeholder="Search 600+ items — sofa, mattress, fridge, hot tub…" aria-label="Search items" autocomplete="off">
+            <button type="button" class="brh-search-clear" data-brh-search-clear hidden aria-label="Clear search"><svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+          </div>
+          <div class="brh-cats" role="tablist" aria-label="Item categories" data-brh-cats></div>
+          <div class="brh-items" data-brh-items></div>
+          <div class="brh-note">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/></svg>
+            <div><strong>Lots of small stuff?</strong> Bundle it into boxes, bags or totes and add those instead — you will find them under <b>Garage &amp; Storage</b>. Clearing a whole garage or storage unit? Use <b>Miscellaneous Household</b> for full-space pricing.</div>
+          </div>
+          <div class="brh-nav">
+            <span></span>
+            <button type="button" class="brh-btn brh-btn-red" data-brh-next>Next: access &amp; extras <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+          </div>
+        </section>
+
+        <!-- STEP 2 -->
+        <section data-brh-panel="2" hidden>
+          <div class="brh-panel-head">
+            <h3>Anything that makes the job harder?</h3>
+            <p>Only check what applies. These are the standard allowances from our estimating rules.</p>
+          </div>
+          <div class="brh-addons" data-brh-addons></div>
+          <div class="brh-note">
+            <svg viewBox="0 0 24 24"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 2.4 17a2 2 0 0 0 1.7 3h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg>
+            <div><strong>Special disposal items.</strong> Mattresses, appliances, refrigerant units (fridges, freezers, A/C), tires, electronics, concrete, dirt and paint carry separate facility disposal charges that are not included below. We will confirm those with you before we load.</div>
+          </div>
+          <div class="brh-nav">
+            <button type="button" class="brh-btn brh-btn-ghost" data-brh-back><svg viewBox="0 0 24 24"><path d="M19 12H5M11 18l-6-6 6-6"/></svg> Back</button>
+            <button type="button" class="brh-btn brh-btn-red" data-brh-next>Next: your details <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+          </div>
+        </section>
+
+        <!-- STEP 3 -->
+        <section data-brh-panel="3" hidden>
+          <div class="brh-panel-head">
+            <h3>Where and when?</h3>
+            <p>So we can lock in your estimate and confirm a pickup window. We never share your info.</p>
+          </div>
+          <div class="brh-grid">
+            <label class="brh-field" data-brh-field="name"><span>Full name <em>*</em></span><input type="text" data-brh-input="name" autocomplete="name" placeholder="Jane Smith"></label>
+            <label class="brh-field" data-brh-field="phone"><span>Phone <em>*</em></span><input type="tel" data-brh-input="phone" autocomplete="tel" placeholder="(916) 555-0123"></label>
+            <label class="brh-field" data-brh-field="email"><span>Email</span><input type="email" data-brh-input="email" autocomplete="email" placeholder="you@email.com"></label>
+            <label class="brh-field" data-brh-field="zip"><span>ZIP code <em>*</em></span><input type="text" data-brh-input="zip" inputmode="numeric" autocomplete="postal-code" maxlength="10" placeholder="95816"></label>
+            <label class="brh-field brh-wide" data-brh-field="address"><span>Pickup address</span><input type="text" data-brh-input="address" autocomplete="street-address" placeholder="Street address, city"></label>
+            <label class="brh-field" data-brh-field="date"><span>Preferred date</span><input type="date" data-brh-input="date"></label>
+            <label class="brh-field" data-brh-field="window"><span>Preferred window</span>
+              <select data-brh-input="window">
+                <option value="">Flexible — any time</option>
+                <option value="6-8am">6:00 – 8:00 am</option>
+                <option value="8-10am">8:00 – 10:00 am</option>
+                <option value="10am-12pm">10:00 am – 12:00 pm</option>
+                <option value="12-2pm">12:00 – 2:00 pm</option>
+                <option value="2-4pm">2:00 – 4:00 pm</option>
+                <option value="4-6pm">4:00 – 6:00 pm</option>
+                <option value="6-8pm">6:00 – 8:00 pm</option>
+              </select>
+            </label>
+            <label class="brh-field brh-wide" data-brh-field="notes"><span>Anything we should know?</span><textarea data-brh-input="notes" rows="3" placeholder="Gate code, where the items are, parking, hoarding clean-out, etc."></textarea></label>
+          </div>
+          <label class="brh-ack" data-brh-ack data-on="0">
+            <span class="brh-check"><svg viewBox="0 0 24 24"><path d="m5 13 4 4L19 7"/></svg></span>
+            <span>I understand this is a volume-based estimate, not a final invoice. The crew confirms the price on site before any work starts.</span>
+          </label>
+          <div class="brh-nav">
+            <button type="button" class="brh-btn brh-btn-ghost" data-brh-back><svg viewBox="0 0 24 24"><path d="M19 12H5M11 18l-6-6 6-6"/></svg> Back</button>
+            <button type="button" class="brh-btn brh-btn-red" data-brh-next>See my estimate <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+          </div>
+        </section>
+
+        <!-- STEP 4 -->
+        <section data-brh-panel="4" hidden>
+          <div class="brh-quote-hero">
+            <small>Your estimated price</small>
+            <span class="brh-big" data-brh-q-total>$0</span>
+            <span class="brh-range" data-brh-q-range></span>
+            <span class="brh-vol" data-brh-q-vol></span>
+          </div>
+          <div data-brh-q-ok hidden></div>
+          <table class="brh-bd">
+            <caption>What is in your estimate</caption>
+            <tbody data-brh-q-rows></tbody>
+          </table>
+          <div class="brh-cta" data-brh-cta></div>
+          <p class="brh-fine">
+            <strong>How this is calculated:</strong> estimated cubic yards × <span data-brh-rate2>—</span> per cubic yard, from the Big Rich Hauling master household price list. Volumes are practical loading allowances, not manufacturer dimensions — actual volume can be lower when items are broken down, nested or flattened.<br>
+            <strong>Not included:</strong> facility disposal charges for mattresses, appliances, refrigerant units, tires, electronics, concrete, dirt and paint; extra labor for unusually heavy, dense or hard-to-reach items. Final price is confirmed on site before we load.
+          </p>
+          <div class="brh-nav">
+            <button type="button" class="brh-btn brh-btn-ghost" data-brh-back><svg viewBox="0 0 24 24"><path d="M19 12H5M11 18l-6-6 6-6"/></svg> Edit my list</button>
+            <a class="brh-btn brh-btn-gold" data-brh-tel href="#"><svg viewBox="0 0 24 24"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2Z"/></svg> Book it — call <span data-brh-phone>—</span></a>
+          </div>
+        </section>
+      </main>
+
+      <aside class="brh-side">
+        <div class="brh-cart">
+          <div class="brh-cart-h">
+            <h4>Your load</h4>
+            <button type="button" class="brh-cart-reset" data-brh-reset>Start over</button>
+          </div>
+          <div class="brh-cart-list" data-brh-cart></div>
+          <div class="brh-cart-f">
+            <div class="brh-line"><span>Items</span><b data-brh-count>0</b></div>
+            <div class="brh-line"><span>Estimated volume</span><b data-brh-cy>0 cu yd</b></div>
+            <div class="brh-meter"><i data-brh-meter></i></div>
+            <div class="brh-meter-t" data-brh-truck>Add items to see your truck load</div>
+            <div data-brh-side-extra></div>
+            <div class="brh-total"><span>Estimate</span><b data-brh-total>$0</b></div>
+            <button type="button" class="brh-btn brh-btn-red brh-btn-full" data-brh-next>Continue</button>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+  </div>
+
+  <div class="brh-mbar" data-brh-mbar hidden>
+    <span class="brh-mbar-t"><b data-brh-mtotal>$0</b><span data-brh-mmeta>0 items</span></span>
+    <button type="button" class="brh-btn brh-btn-red" data-brh-next>Continue</button>
+  </div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ==========================================================================
+     BRH_CONFIG — everything you may want to change lives here.
+     ========================================================================== */
+  var BRH_CONFIG = {
+    ratePerCubicYard : 40,          // $ per cubic yard (master price list basis)
+    minimumCharge    : 125,         // lowest price ever quoted, in $. Set to 0 for none.
+    truckCapacityCY  : 16,          // cubic yards in one truck load (for the load meter)
+    rangePercent     : 10,          // estimate is shown as a +/- % range
+    phone            : "916-252-9500",
+    phoneDial        : "+19162529500",
+    smsEnabled       : true,        // show the "Text us" button
+    quoteEmail       : "",          // e.g. "office@bigrichhauling.com" -> enables "Email my quote"
+    webhookUrl       : "",          // e.g. a Zapier/Make/WPForms endpoint -> enables "Request pickup"
+    businessName     : "Big Rich Hauling & Junk Removal",
+
+    // Access / labor allowances. pct = percentage added to the load price.
+    addons: [
+      { id:"stairs",     label:"Stairs or elevator",        pct:10, desc:"Items are above or below the ground floor." },
+      { id:"carry",      label:"Long carry or tight access", pct:10, desc:"Over ~75 ft to the truck, narrow gate, no driveway parking." },
+      { id:"disassembly",label:"Disassembly needed",         pct:15, desc:"Beds, sheds, playsets, shelving or fencing we take apart." },
+      { id:"heavy",      label:"Unusually heavy or dense",   pct:15, desc:"Safes, pianos, spas, concrete, dirt, roofing, tile." },
+      { id:"sameday",    label:"Same-day or next-day",       pct:15, desc:"You need it gone right now — we work you into today's route." }
+    ],
+
+    // Rooms shown in the "Popular" tab, referenced by Item ID from the price list.
+    popularIds: ["LR-049","BR-005","BR-006","KT-002","LA-001","LA-003","EL-003","DR-005",
+                 "DR-001","BR-030","LR-037","OF-002","EX-012","PO-016","PO-047","MH-013",
+                 "GS-005","GS-002","CR-017","GS-044"]
+  };
+
+  /* ==========================================================================
+     Item data — generated from the master price list spreadsheet.
+     Shape: [{ n:"Category", e:"emoji", i:[ [id, name, cubicYards], ... ] }]
+     Price for any item = cubicYards * BRH_CONFIG.ratePerCubicYard
+     ========================================================================== */
+  var BRH_DATA = [
+    {n:"Living Room",e:"🛋️",i:[["LR-001","Accent chair",.75],["LR-002","Armchair",1],["LR-003","Bean bag chair - small",.5],["LR-004","Bean bag chair - large",1],["LR-005","Bench - small",.5],["LR-006","Bench - large",1],["LR-007","Bookcase - narrow",.75],["LR-008","Bookcase - standard",1.5],["LR-009","Bookcase - large",2],["LR-010","Cabinet - small",1],["LR-011","Cabinet - large",2],["LR-012","Chaise lounge",2],["LR-013","Coffee table - small",.5],["LR-014","Coffee table - standard",.75],["LR-015","Coffee table - oversized",1.25],["LR-016","Console table",.75],["LR-017","Curio cabinet - small",1.5],["LR-018","Curio cabinet - large",2.5],["LR-019","End table",.5],["LR-020","Entertainment center - small",2],["LR-021","Entertainment center - large",4],["LR-022","Fireplace screen",.25],["LR-023","Folding chair",.25],["LR-024","Footstool",.25],["LR-025","Futon",3],["LR-026","Grandfather clock",2],["LR-027","Hall tree",1.5],["LR-028","Lamp - table",.25],["LR-029","Lamp - floor",.25],["LR-030","Loveseat",2],["LR-031","Magazine rack",.25],["LR-032","Massage chair",2.5],["LR-033","Media cabinet",1.5],["LR-034","Nesting tables - set",.75],["LR-035","Ottoman - small",.5],["LR-036","Ottoman - large",1],["LR-037","Recliner",1],["LR-038","Reclining loveseat",2.5],["LR-039","Rocking chair",1],["LR-040","Room divider",1],["LR-041","Rug - small rolled",.25],["LR-042","Rug - medium rolled",.5],["LR-043","Rug - large rolled",.75],["LR-044","Sectional - 3 piece",4.5],["LR-045","Sectional - 4 piece",5.5],["LR-046","Sectional - 5+ piece",6.5],["LR-047","Sleeper sofa",4],["LR-048","Sofa - 2 cushion",2.5],["LR-049","Sofa - 3 cushion",3],["LR-050","Sofa - oversized",3.5],["LR-051","Sofa chair",1.25],["LR-052","Stereo cabinet",1.25],["LR-053","TV stand - small",.75],["LR-054","TV stand - large",1.5],["LR-055","Wall shelf",.25],["LR-056","Wine cabinet",2]]},
+    {n:"Bedroom",e:"🛏️",i:[["BR-001","Twin mattress",1],["BR-002","Twin box spring",.5],["BR-003","Full mattress",1.25],["BR-004","Full box spring",.75],["BR-005","Queen mattress",1.5],["BR-006","Queen box spring",.75],["BR-007","King mattress",2],["BR-008","King box spring - pair",1],["BR-009","California king mattress",2],["BR-010","Adjustable bed base - twin",1.25],["BR-011","Adjustable bed base - queen",1.75],["BR-012","Adjustable bed base - king",2.25],["BR-013","Bed frame - twin",.5],["BR-014","Bed frame - full",.75],["BR-015","Bed frame - queen",1],["BR-016","Bed frame - king",1.25],["BR-017","Platform bed - twin",1.5],["BR-018","Platform bed - queen",2],["BR-019","Platform bed - king",2.5],["BR-020","Bunk bed",3],["BR-021","Loft bed",3],["BR-022","Trundle bed",2],["BR-023","Daybed",3],["BR-024","Headboard - twin",.5],["BR-025","Headboard - queen",.75],["BR-026","Headboard - king",1],["BR-027","Footboard",.5],["BR-028","Nightstand",.5],["BR-029","Dresser - small",1],["BR-030","Dresser - standard",1.5],["BR-031","Dresser - large",2],["BR-032","Chest of drawers",1.5],["BR-033","Armoire",2.5],["BR-034","Wardrobe cabinet",2.5],["BR-035","Jewelry armoire",.75],["BR-036","Vanity",1.5],["BR-037","Vanity mirror",.5],["BR-038","Vanity stool",.25],["BR-039","Bedroom bench",.75],["BR-040","Hope chest",1.25],["BR-041","Hamper",.25],["BR-042","Standing mirror",.75],["BR-043","Wall mirror",.25],["BR-044","Shoe rack",.5],["BR-045","Closet organizer - small",.5],["BR-046","Closet organizer - large",1],["BR-047","Under-bed storage bin",.25],["BR-048","Clothing rack",.75]]},
+    {n:"Dining Room",e:"🍽️",i:[["DR-001","Dining chair",.25],["DR-002","Captain dining chair",.5],["DR-003","Dining bench",.75],["DR-004","Dining table - 2 person",.75],["DR-005","Dining table - 4 person",1],["DR-006","Dining table - 6 person",1.5],["DR-007","Dining table - 8+ person",2],["DR-008","Dining table leaf",.25],["DR-009","Counter stool",.25],["DR-010","Bar stool",.25],["DR-011","Buffet - small",1.5],["DR-012","Buffet - large",2.5],["DR-013","China cabinet - one piece",3],["DR-014","China hutch - two piece",3.5],["DR-015","Bakers rack",1],["DR-016","Bar cart",.5],["DR-017","Serving cart",.5],["DR-018","Wine rack - small",.5],["DR-019","Wine rack - large",1.25],["DR-020","Dining room rug - rolled",.75]]},
+    {n:"Kitchen",e:"🍳",i:[["KT-001","Refrigerator - compact",.75],["KT-002","Refrigerator - top freezer",2],["KT-003","Refrigerator - side by side",2.5],["KT-004","Refrigerator - French door",3],["KT-005","Freezer - upright small",1.5],["KT-006","Freezer - upright large",2.5],["KT-007","Freezer - chest small",1.5],["KT-008","Freezer - chest large",2.5],["KT-009","Range/stove",1.5],["KT-010","Wall oven",1],["KT-011","Cooktop",.25],["KT-012","Dishwasher",1],["KT-013","Trash compactor",.75],["KT-014","Microwave - countertop",.25],["KT-015","Microwave - over range",.5],["KT-016","Range hood",.25],["KT-017","Kitchen island - movable small",1],["KT-018","Kitchen island - movable large",2],["KT-019","Kitchen cart",.75],["KT-020","Pantry cabinet",2],["KT-021","Base cabinet",.75],["KT-022","Wall cabinet",.5],["KT-023","Kitchen sink",.5],["KT-024","Garbage disposal",.1],["KT-025","Bar refrigerator",.75],["KT-026","Wine refrigerator",.75],["KT-027","Water cooler",.5],["KT-028","Coffee maker",.1],["KT-029","Espresso machine",.15],["KT-030","Toaster",.05],["KT-031","Toaster oven",.1],["KT-032","Air fryer",.1],["KT-033","Slow cooker",.1],["KT-034","Pressure cooker",.1],["KT-035","Blender",.05],["KT-036","Food processor",.1],["KT-037","Stand mixer",.15],["KT-038","Bread maker",.15],["KT-039","Rice cooker",.1],["KT-040","Electric skillet",.1],["KT-041","Dish rack",.1],["KT-042","Pot and pan box",.25],["KT-043","Dishware box",.25],["KT-044","Glassware box",.25],["KT-045","Kitchen trash can",.15],["KT-046","Step stool",.15],["KT-047","High chair",.5],["KT-048","Restaurant-style shelving unit",1]]},
+    {n:"Bathroom",e:"🚿",i:[["BA-001","Bathroom vanity - small",.75],["BA-002","Bathroom vanity - double",1.5],["BA-003","Medicine cabinet",.25],["BA-004","Bathroom mirror",.25],["BA-005","Toilet",.5],["BA-006","Bidet",.5],["BA-007","Pedestal sink",.5],["BA-008","Bathroom sink",.25],["BA-009","Bathtub - fiberglass",2],["BA-010","Bathtub - cast iron",2],["BA-011","Shower door - set",.5],["BA-012","Shower enclosure",1.5],["BA-013","Linen cabinet",1],["BA-014","Over-toilet cabinet",.5],["BA-015","Laundry hamper",.25],["BA-016","Bathroom shelf",.25],["BA-017","Towel rack",.1],["BA-018","Shower chair",.5],["BA-019","Bathroom scale",.05],["BA-020","Small bathroom trash can",.05]]},
+    {n:"Laundry Room",e:"🧺",i:[["LA-001","Washer - top load",1.25],["LA-002","Washer - front load",1.25],["LA-003","Dryer",1.25],["LA-004","Stacked washer/dryer",2],["LA-005","Laundry pedestal",.5],["LA-006","Utility sink",.75],["LA-007","Ironing board",.25],["LA-008","Drying rack",.25],["LA-009","Laundry cabinet",1],["LA-010","Laundry sorter",.25],["LA-011","Clothes steamer",.1],["LA-012","Iron",.05]]},
+    {n:"Home Office",e:"💼",i:[["OF-001","Writing desk",1],["OF-002","Computer desk",1.5],["OF-003","L-shaped desk",2.5],["OF-004","Executive desk",2.5],["OF-005","Standing desk",1.5],["OF-006","Desk hutch",1],["OF-007","Office chair",.5],["OF-008","Executive office chair",.75],["OF-009","Guest chair",.5],["OF-010","Filing cabinet - 2 drawer",.5],["OF-011","Filing cabinet - 4 drawer",1],["OF-012","Lateral filing cabinet",1.25],["OF-013","Bookcase - small",.75],["OF-014","Bookcase - large",1.5],["OF-015","Printer - desktop",.15],["OF-016","Printer - large office",.75],["OF-017","Copier",1.5],["OF-018","Paper shredder",.15],["OF-019","Computer tower",.1],["OF-020","Computer monitor",.1],["OF-021","Dual monitor set",.2],["OF-022","Laptop",.05],["OF-023","Keyboard and mouse set",.05],["OF-024","Server rack - empty",1],["OF-025","Whiteboard",.25],["OF-026","Bulletin board",.15],["OF-027","Floor mat",.15],["OF-028","Office cubicle panel",.5],["OF-029","Office credenza",1.5],["OF-030","Conference table - small",1.5],["OF-031","Conference table - large",3]]},
+    {n:"Electronics",e:"🖥️",i:[["EL-001","Television under 32 inch",.15],["EL-002","Television 32-49 inch",.25],["EL-003","Television 50-65 inch",.5],["EL-004","Television over 65 inch",.75],["EL-005","CRT television - small",.5],["EL-006","CRT television - large",1],["EL-007","Projector",.1],["EL-008","Projection screen",.25],["EL-009","Stereo receiver",.1],["EL-010","Turntable",.1],["EL-011","Soundbar",.1],["EL-012","Speaker - bookshelf",.1],["EL-013","Speaker - floor standing",.25],["EL-014","Subwoofer",.25],["EL-015","Home theater speaker set",.5],["EL-016","DVD/Blu-ray player",.05],["EL-017","Game console",.05],["EL-018","Desktop computer",.1],["EL-019","Monitor",.1],["EL-020","All-in-one computer",.15],["EL-021","Tablet",.02],["EL-022","Router/modem",.02],["EL-023","UPS battery backup",.1],["EL-024","Small electronics box",.25],["EL-025","Large electronics box",.5],["EL-026","Window air conditioner",.5],["EL-027","Portable air conditioner",.75],["EL-028","Space heater",.15],["EL-029","Dehumidifier",.5],["EL-030","Humidifier",.15],["EL-031","Air purifier",.25],["EL-032","Vacuum - upright",.25],["EL-033","Vacuum - canister",.25],["EL-034","Robot vacuum",.05],["EL-035","Floor cleaner",.25]]},
+    {n:"Garage & Storage",e:"📦",i:[["GS-001","Plastic tote - small",.15],["GS-002","Plastic tote - large",.25],["GS-003","Cardboard moving box - small",.1],["GS-004","Cardboard moving box - medium",.15],["GS-005","Cardboard moving box - large",.25],["GS-006","Contractor trash bag",.25],["GS-007","Kitchen trash bag",.1],["GS-008","Garbage can - 32 gallon",.2],["GS-009","Wheeled trash cart - 64 gallon",.4],["GS-010","Wheeled trash cart - 96 gallon",.5],["GS-011","Metal shelving unit - small",.75],["GS-012","Metal shelving unit - large",1.5],["GS-013","Plastic shelving unit",1],["GS-014","Storage cabinet - small",1],["GS-015","Storage cabinet - tall",2],["GS-016","Workbench - small",1],["GS-017","Workbench - large",2],["GS-018","Pegboard panel",.25],["GS-019","Tool chest - portable",.25],["GS-020","Tool chest - rolling",1],["GS-021","Tool chest - large rolling",1.5],["GS-022","Ladder - step",.25],["GS-023","Ladder - extension",.5],["GS-024","Sawhorse - each",.25],["GS-025","Shop vacuum",.25],["GS-026","Air compressor - pancake",.25],["GS-027","Air compressor - upright",.75],["GS-028","Generator - portable",.5],["GS-029","Generator - large",1],["GS-030","Pressure washer",.5],["GS-031","Floor jack",.15],["GS-032","Jack stand - pair",.1],["GS-033","Car ramp - pair",.25],["GS-034","Hand truck/dolly",.25],["GS-035","Furniture dolly",.1],["GS-036","Garden cart",.5],["GS-037","Wheelbarrow",.75],["GS-038","Bicycle - child",.5],["GS-039","Bicycle - adult",.75],["GS-040","E-bike",.75],["GS-041","Scooter",.25],["GS-042","Motorized mobility scooter",1.5],["GS-043","Motorcycle parts box",.25],["GS-044","Tire - passenger car",.25],["GS-045","Tire - truck",.4],["GS-046","Tire with rim - passenger",.3],["GS-047","Tire with rim - truck",.5],["GS-048","Automotive battery",.05],["GS-049","Car seat",.5],["GS-050","Roof cargo box",1],["GS-051","Cooler - small",.15],["GS-052","Cooler - large",.4],["GS-053","Camping bin",.25],["GS-054","Tent - packed",.15],["GS-055","Sleeping bag",.1],["GS-056","Folding camp chair",.15],["GS-057","Pop-up canopy - packed",.25],["GS-058","Kayak",1.5],["GS-059","Canoe",2],["GS-060","Paddleboard",1]]},
+    {n:"Tools",e:"🔧",i:[["TL-001","Hand tool box",.1],["TL-002","Power tool case",.1],["TL-003","Cordless drill",.05],["TL-004","Circular saw",.1],["TL-005","Miter saw",.25],["TL-006","Table saw - portable",.5],["TL-007","Table saw - cabinet",1.25],["TL-008","Band saw",.75],["TL-009","Scroll saw",.25],["TL-010","Drill press - bench",.5],["TL-011","Drill press - floor",1],["TL-012","Bench grinder",.15],["TL-013","Welder - small",.25],["TL-014","Welder - large",.5],["TL-015","Router table",.5],["TL-016","Wood lathe",1],["TL-017","Metal lathe",1.5],["TL-018","Tile saw",.25],["TL-019","Chainsaw",.15],["TL-020","Pole saw",.15],["TL-021","Hedge trimmer",.15],["TL-022","String trimmer",.15],["TL-023","Leaf blower",.15],["TL-024","Lawn edger",.25],["TL-025","Push mower",.75],["TL-026","Self-propelled mower",.75],["TL-027","Riding mower",3],["TL-028","Lawn tractor attachment",1],["TL-029","Rototiller",.75],["TL-030","Log splitter",1.5],["TL-031","Snow blower",1],["TL-032","Shovel/rake/hoe - each",.1],["TL-033","Long-handle tool bundle",.5],["TL-034","Garden hose",.1],["TL-035","Hose reel",.25],["TL-036","Extension cord box",.15],["TL-037","Hardware box",.15],["TL-038","Paint supplies box",.25]]},
+    {n:"Patio & Outdoor",e:"🌳",i:[["PO-001","Patio chair - stackable",.25],["PO-002","Patio chair - cushioned",.5],["PO-003","Patio recliner",.75],["PO-004","Patio loveseat",1.5],["PO-005","Patio sofa",2.5],["PO-006","Patio sectional - small",4],["PO-007","Patio sectional - large",6],["PO-008","Patio table - side",.5],["PO-009","Patio dining table - small",1],["PO-010","Patio dining table - large",2],["PO-011","Patio umbrella",.25],["PO-012","Umbrella base",.15],["PO-013","Outdoor storage box - small",.75],["PO-014","Outdoor storage box - large",1.5],["PO-015","BBQ grill - portable",.5],["PO-016","BBQ grill - standard",1],["PO-017","BBQ grill - large",1.5],["PO-018","Smoker - small",.75],["PO-019","Smoker - large",1.5],["PO-020","Blackstone-style griddle",1],["PO-021","Fire pit - portable",.5],["PO-022","Fire pit table",1.25],["PO-023","Chiminea",.75],["PO-024","Porch swing",1.5],["PO-025","Hammock and stand",1],["PO-026","Adirondack chair",.5],["PO-027","Outdoor bench",1],["PO-028","Bird bath",.5],["PO-029","Planter - small",.15],["PO-030","Planter - medium",.3],["PO-031","Planter - large",.75],["PO-032","Raised garden bed - empty",1],["PO-033","Garden fountain - small",.5],["PO-034","Garden fountain - large",1.5],["PO-035","Dog house - small",.75],["PO-036","Dog house - large",1.5],["PO-037","Chicken coop - small",2],["PO-038","Trampoline - small dismantled",1],["PO-039","Trampoline - large dismantled",2],["PO-040","Swing set - dismantled",3],["PO-041","Playhouse - plastic",2.5],["PO-042","Above-ground pool - dismantled",3],["PO-043","Pool ladder",.5],["PO-044","Pool filter",.5],["PO-045","Pool cover - folded",.5],["PO-046","Hot tub cover",1.5],["PO-047","Hot tub/spa",8],["PO-048","Portable sauna",3]]},
+    {n:"Exercise & Recreation",e:"🏋️",i:[["EX-001","Yoga mat",.05],["EX-002","Exercise ball",.25],["EX-003","Dumbbell - each",.03],["EX-004","Dumbbell set with rack",.75],["EX-005","Barbell",.1],["EX-006","Weight plate - each",.03],["EX-007","Weight plate set",.5],["EX-008","Weight bench",.75],["EX-009","Olympic bench set",1.5],["EX-010","Power rack",2],["EX-011","Squat rack",1.5],["EX-012","Treadmill - folding",1.5],["EX-013","Treadmill - commercial",2.5],["EX-014","Elliptical",2],["EX-015","Stationary bike",1],["EX-016","Recumbent bike",1.25],["EX-017","Rowing machine",1],["EX-018","Home gym - small",2.5],["EX-019","Home gym - large",4],["EX-020","Punching bag",.75],["EX-021","Punching bag stand",1.5],["EX-022","Foosball table",2],["EX-023","Air hockey table",2.5],["EX-024","Pool table - 7 foot",5],["EX-025","Pool table - 8 foot",6],["EX-026","Ping pong table folded",2],["EX-027","Arcade cabinet",2],["EX-028","Basketball hoop - portable",2],["EX-029","Golf club bag",.25],["EX-030","Ski set",.25],["EX-031","Snowboard",.25],["EX-032","Surfboard",.5],["EX-033","Fishing gear bundle",.25]]},
+    {n:"Baby & Kids",e:"🧸",i:[["BK-001","Crib",1.5],["BK-002","Mini crib",1],["BK-003","Toddler bed",1.25],["BK-004","Changing table",1],["BK-005","Baby dresser",1],["BK-006","Bassinet",.5],["BK-007","Playpen",.5],["BK-008","Baby swing",.5],["BK-009","Baby bouncer",.25],["BK-010","High chair",.5],["BK-011","Stroller - single",.5],["BK-012","Stroller - double",.75],["BK-013","Infant car seat",.25],["BK-014","Convertible car seat",.5],["BK-015","Booster seat",.25],["BK-016","Diaper pail",.15],["BK-017","Toy box",.75],["BK-018","Kids table",.5],["BK-019","Kids chair",.15],["BK-020","School desk",.5],["BK-021","Dollhouse - small",.5],["BK-022","Dollhouse - large",1.5],["BK-023","Ride-on toy",.5],["BK-024","Plastic slide",1],["BK-025","Toy kitchen",1],["BK-026","Rocking horse",.5],["BK-027","Stuffed animal bag",.25],["BK-028","Toy box/bin",.25],["BK-029","Board game box",.1],["BK-030","Building block tote",.25]]},
+    {n:"Clothing, Linens & Personal",e:"👕",i:[["CL-001","Clothing bag",.1],["CL-002","Clothing box",.15],["CL-003","Hanging wardrobe box",.5],["CL-004","Shoe box",.05],["CL-005","Shoe tote",.25],["CL-006","Bedding bag",.15],["CL-007","Linen box",.15],["CL-008","Pillow",.05],["CL-009","Comforter",.1],["CL-010","Blanket",.05],["CL-011","Sleeping pillow bag",.15],["CL-012","Suitcase - carry-on",.15],["CL-013","Suitcase - standard",.25],["CL-014","Suitcase - oversized",.4],["CL-015","Duffel bag",.1],["CL-016","Backpack",.05],["CL-017","Purse box",.1],["CL-018","Coat rack",.5],["CL-019","Garment rack",.75],["CL-020","Sewing machine",.15],["CL-021","Sewing table",.75],["CL-022","Dress form/mannequin",.5]]},
+    {n:"Books, Media & Decor",e:"📚",i:[["MD-001","Book box",.15],["MD-002","Magazine box",.15],["MD-003","Record crate",.15],["MD-004","DVD/CD box",.1],["MD-005","Photo album box",.1],["MD-006","Framed picture - small",.05],["MD-007","Framed picture - large",.25],["MD-008","Wall art - oversized",.5],["MD-009","Decor box",.15],["MD-010","Vase - small",.05],["MD-011","Vase - large",.25],["MD-012","Artificial plant - small",.15],["MD-013","Artificial plant - large",.5],["MD-014","Floor clock",.5],["MD-015","Wall clock",.05],["MD-016","Candle box",.1],["MD-017","Picture frame box",.1],["MD-018","Aquarium - 10 gallon",.25],["MD-019","Aquarium - 20-40 gallon",.5],["MD-020","Aquarium - 50+ gallon",1],["MD-021","Aquarium stand",.75],["MD-022","Terrarium",.5],["MD-023","Decorative screen",1]]},
+    {n:"Pet Supplies",e:"🐾",i:[["PS-001","Dog crate - small",.25],["PS-002","Dog crate - large",.75],["PS-003","Pet bed - small",.15],["PS-004","Pet bed - large",.5],["PS-005","Cat tree - small",.5],["PS-006","Cat tree - large",1.25],["PS-007","Litter box",.15],["PS-008","Pet carrier",.25],["PS-009","Dog ramp",.5],["PS-010","Pet gate",.25],["PS-011","Aquarium supplies box",.25],["PS-012","Pet food container",.25],["PS-013","Rabbit cage",.75],["PS-014","Bird cage - small",.25],["PS-015","Bird cage - large",.75],["PS-016","Reptile enclosure",.5]]},
+    {n:"Holiday & Seasonal",e:"🎄",i:[["HS-001","Holiday decor tote",.25],["HS-002","Artificial Christmas tree - boxed small",.5],["HS-003","Artificial Christmas tree - boxed large",1],["HS-004","Christmas tree - assembled",1.5],["HS-005","Wreath box",.25],["HS-006","Outdoor light box",.15],["HS-007","Inflatable decoration - packed",.15],["HS-008","Lawn decoration - small",.25],["HS-009","Lawn decoration - large",.75],["HS-010","Halloween decor tote",.25],["HS-011","Easter decor tote",.25],["HS-012","Gift wrap container",.15],["HS-013","Holiday village box",.15],["HS-014","Ornament box",.1],["HS-015","Patio heater",.75],["HS-016","Portable fan",.15],["HS-017","Window fan",.15]]},
+    {n:"Musical Instruments",e:"🎸",i:[["MI-001","Acoustic guitar",.25],["MI-002","Electric guitar",.25],["MI-003","Guitar amplifier - small",.15],["MI-004","Guitar amplifier - large",.5],["MI-005","Keyboard - portable",.5],["MI-006","Keyboard with stand",.75],["MI-007","Upright piano",7],["MI-008","Baby grand piano",10],["MI-009","Organ",3],["MI-010","Drum set",2],["MI-011","Cymbal stand",.15],["MI-012","Violin",.1],["MI-013","Cello",.5],["MI-014","Saxophone case",.15],["MI-015","Music stand",.1],["MI-016","Instrument case",.15]]},
+    {n:"Construction & Remodeling",e:"🧱",i:[["CR-001","Drywall sheet",.15],["CR-002","Drywall debris - contractor bag",.25],["CR-003","Lumber - short bundle",.5],["CR-004","Lumber - long bundle",1],["CR-005","Plywood sheet",.1],["CR-006","Cabinet - base",.75],["CR-007","Cabinet - wall",.5],["CR-008","Interior door",.25],["CR-009","Exterior door",.5],["CR-010","Screen door",.25],["CR-011","Window - small",.25],["CR-012","Window - large",.5],["CR-013","Toilet",.5],["CR-014","Bathroom vanity",1],["CR-015","Countertop section",.5],["CR-016","Carpet roll - small",.5],["CR-017","Carpet roll - large",1],["CR-018","Carpet padding roll",.5],["CR-019","Flooring box",.1],["CR-020","Tile box",.1],["CR-021","Insulation bag",.25],["CR-022","Roofing shingle bundle",.1],["CR-023","Roofing debris - contractor bag",.25],["CR-024","Fence panel - wood",.75],["CR-025","Fence post",.15],["CR-026","Chain-link fence roll",.5],["CR-027","Concrete debris - contractor bag",.25],["CR-028","Brick - each",.01],["CR-029","Brick stack - small",.5],["CR-030","Paver stack - small",.5],["CR-031","Sink",.5],["CR-032","Bathtub",2],["CR-033","Shower pan",.75],["CR-034","Water heater - tank",1],["CR-035","Water heater - tankless",.25],["CR-036","Furnace",1.5],["CR-037","HVAC condenser",1],["CR-038","Evaporative cooler",1.5],["CR-039","Ceiling fan",.5],["CR-040","Light fixture",.1],["CR-041","Paint can - empty",.05],["CR-042","Pipe bundle",.25],["CR-043","Scrap metal pile - small",.5],["CR-044","Scrap metal pile - large",1.5]]},
+    {n:"Miscellaneous Household",e:"🏠",i:[["MH-001","Small loose-item pile",.25],["MH-002","Medium loose-item pile",.5],["MH-003","Large loose-item pile",1],["MH-004","Closet contents - small",1],["MH-005","Closet contents - standard",2],["MH-006","Walk-in closet contents",4],["MH-007","Pantry contents - small",.75],["MH-008","Pantry contents - large",1.5],["MH-009","Bathroom contents",.5],["MH-010","Laundry room contents",1],["MH-011","Home office contents",2],["MH-012","Single-car garage contents - light",8],["MH-013","Single-car garage contents - full",15],["MH-014","Two-car garage contents - light",15],["MH-015","Two-car garage contents - full",25],["MH-016","Storage unit 5x5 - light",3],["MH-017","Storage unit 5x5 - full",6],["MH-018","Storage unit 5x10 - light",6],["MH-019","Storage unit 5x10 - full",12],["MH-020","Storage unit 10x10 - light",12],["MH-021","Storage unit 10x10 - full",25],["MH-022","Storage unit 10x20 - light",25],["MH-023","Storage unit 10x20 - full",50]]}
+  ];
+
+  /* ========================================================================== */
+  var root = document.getElementById("brh-quote");
+  if(!root || root.getAttribute("data-brh-ready") === "1") return;
+  root.setAttribute("data-brh-ready","1");
+
+  var CFG = BRH_CONFIG;
+  var RATE = CFG.ratePerCubicYard;
+  var ALL = [];                                   // flat item list
+  var BY_ID = {};
+  BRH_DATA.forEach(function(cat){
+    cat.i.forEach(function(row){
+      var it = { id:row[0], name:row[1], cy:row[2], cat:cat.n, price:round2(row[2]*RATE) };
+      ALL.push(it); BY_ID[it.id] = it;
+    });
+  });
+  var POPULAR = CFG.popularIds.map(function(id){ return BY_ID[id]; }).filter(Boolean);
+
+  var state = {
+    step   : 1,
+    qty    : {},                                  // itemId -> quantity
+    addons : {},                                  // addonId -> true
+    cat    : POPULAR.length ? "__popular__" : BRH_DATA[0].n,
+    search : "",
+    ack    : false,
+    details: { name:"", phone:"", email:"", zip:"", address:"", date:"", window:"", notes:"" },
+    sent   : false,
+    showAll: false                                // "show all items" in the open list
+  };
+  var PAGE = 26;                                  // items shown before "show all"
+
+  /* ---------- helpers ---------- */
+  function round2(n){ return Math.round(n*100)/100; }
+  function money(n){
+    var v = Math.round(n);
+    return "$" + v.toLocaleString("en-US");
+  }
+  function moneyFine(n){
+    return n < 10 && n % 1 !== 0
+      ? "$" + n.toFixed(2)
+      : "$" + Math.round(n).toLocaleString("en-US");
+  }
+  function esc(s){
+    return String(s).replace(/[&<>"']/g, function(c){
+      return { "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c];
+    });
+  }
+  function q(sel, ctx){ return (ctx||root).querySelector(sel); }
+  function qa(sel, ctx){ return Array.prototype.slice.call((ctx||root).querySelectorAll(sel)); }
+  function cy(n){ return (Math.round(n*100)/100) + " cu yd"; }
+
+  /* ---------- pricing ---------- */
+  function totals(){
+    var itemsTotal = 0, volume = 0, count = 0, lines = [];
+    Object.keys(state.qty).forEach(function(id){
+      var n = state.qty[id], it = BY_ID[id];
+      if(!it || !n) return;
+      count  += n;
+      volume += it.cy * n;
+      itemsTotal += it.price * n;
+      lines.push({ item:it, qty:n, total:round2(it.price*n) });
+    });
+    lines.sort(function(a,b){ return b.total - a.total; });
+
+    itemsTotal = round2(itemsTotal);
+    volume     = round2(volume);
+    var minAdj = 0, base = itemsTotal;
+    if(count && CFG.minimumCharge > 0 && itemsTotal < CFG.minimumCharge){
+      minAdj = round2(CFG.minimumCharge - itemsTotal);
+      base   = CFG.minimumCharge;
+    }
+    var addonLines = [], addonTotal = 0;
+    CFG.addons.forEach(function(a){
+      if(!state.addons[a.id]) return;
+      var amt = round2(base * a.pct / 100);
+      addonTotal += amt;
+      addonLines.push({ addon:a, amount:amt });
+    });
+    addonTotal = round2(addonTotal);
+    var total = round2(base + addonTotal);
+    var pct   = CFG.rangePercent / 100;
+    return {
+      lines:lines, count:count, volume:volume, itemsTotal:itemsTotal,
+      minAdj:minAdj, base:base, addonLines:addonLines, addonTotal:addonTotal,
+      total:total,
+      low : Math.max(CFG.minimumCharge || 0, round2(total * (1-pct))),
+      high: round2(total * (1+pct))
+    };
+  }
+
+  /* ---------- step 1: categories + items ---------- */
+  function renderCats(){
+    var picked = {};
+    Object.keys(state.qty).forEach(function(id){
+      if(state.qty[id] && BY_ID[id]) picked[BY_ID[id].cat] = (picked[BY_ID[id].cat]||0) + state.qty[id];
+    });
+    var html = "";
+    if(POPULAR.length){
+      var pc = POPULAR.reduce(function(s,it){ return s + (state.qty[it.id]||0); }, 0);
+      html += catBtn("__popular__", "⭐", "Popular items", pc);
+    }
+    BRH_DATA.forEach(function(c){ html += catBtn(c.n, c.e, c.n, picked[c.n]||0); });
+    q("[data-brh-cats]").innerHTML = html;
+  }
+  function catBtn(key, emoji, label, count){
+    var on = state.cat === key && !state.search;
+    return '<button type="button" class="brh-cat" role="tab" data-brh-cat="'+esc(key)+'" aria-selected="'+(on?"true":"false")+'">'+
+             '<span aria-hidden="true">'+emoji+'</span>'+esc(label)+
+             (count ? '<span class="brh-cat-count">'+count+'</span>' : '')+
+           '</button>';
+  }
+  function visibleItems(){
+    var s = state.search.trim().toLowerCase();
+    if(s.length >= 2){
+      var words = s.split(/\s+/);
+      return ALL.filter(function(it){
+        var hay = (it.name + " " + it.cat).toLowerCase();
+        return words.every(function(w){ return hay.indexOf(w) !== -1; });
+      }).slice(0, 120);
+    }
+    if(state.cat === "__popular__") return POPULAR;
+    var cat = BRH_DATA.filter(function(c){ return c.n === state.cat; })[0];
+    return cat ? cat.i.map(function(r){ return BY_ID[r[0]]; }) : [];
+  }
+  function renderItems(){
+    var list = visibleItems(), box = q("[data-brh-items]");
+    if(!list.length){
+      box.innerHTML = '<div class="brh-empty">No items match “'+esc(state.search)+'”.<br>Try a shorter word, or browse a room above.</div>';
+      return;
+    }
+    var showCat = state.search.trim().length >= 2 || state.cat === "__popular__";
+    var shown = state.showAll ? list : list.slice(0, PAGE);
+    box.innerHTML = shown.map(function(it){
+      var n = state.qty[it.id] || 0;
+      return '<div class="brh-item" data-picked="'+(n?1:0)+'">'+
+        '<div class="brh-item-txt">'+
+          '<div class="brh-item-name">'+esc(it.name)+'</div>'+
+          '<div class="brh-item-meta">'+(showCat ? esc(it.cat)+' · ' : '')+cy(it.cy)+'</div>'+
+        '</div>'+
+        '<div class="brh-item-price">'+moneyFine(it.price)+'</div>'+
+        '<div class="brh-stepper">'+
+          '<button type="button" data-brh-dec="'+it.id+'" aria-label="Remove one '+esc(it.name)+'"'+(n?"":" disabled")+'>&minus;</button>'+
+          '<span class="brh-stepper-qty" aria-live="polite">'+n+'</span>'+
+          '<button type="button" data-brh-inc="'+it.id+'" aria-label="Add one '+esc(it.name)+'">+</button>'+
+        '</div>'+
+      '</div>';
+    }).join("");
+    if(shown.length < list.length){
+      box.insertAdjacentHTML("beforeend",
+        '<button type="button" class="brh-more" data-brh-more>Show all '+list.length+' items'+
+        (state.cat !== "__popular__" && !state.search ? " in " + esc(state.cat) : "")+' &darr;</button>');
+    }
+  }
+
+  /* ---------- step 2 ---------- */
+  function renderAddons(){
+    q("[data-brh-addons]").innerHTML = CFG.addons.map(function(a){
+      var on = state.addons[a.id] ? 1 : 0;
+      return '<label class="brh-addon" data-on="'+on+'" data-brh-addon="'+a.id+'">'+
+        '<span class="brh-check"><svg viewBox="0 0 24 24"><path d="m5 13 4 4L19 7"/></svg></span>'+
+        '<span style="flex:1 1 auto!important;min-width:0!important;">'+
+          '<span class="brh-addon-t"><span>'+esc(a.label)+'</span><span class="brh-pct">+'+a.pct+'%</span></span>'+
+          '<span class="brh-addon-d">'+esc(a.desc)+'</span>'+
+        '</span></label>';
+    }).join("");
+  }
+
+  /* ---------- summary rail ---------- */
+  function renderCart(){
+    var t = totals(), box = q("[data-brh-cart]");
+    if(!t.lines.length){
+      box.innerHTML = '<div class="brh-cart-empty">Nothing added yet.<br>Pick your items to build a price.</div>';
+    } else {
+      box.innerHTML = t.lines.map(function(l){
+        return '<div class="brh-cart-row">'+
+          '<span class="brh-cr-n">'+esc(l.item.name)+' <span class="brh-cr-q">&times;'+l.qty+'</span></span>'+
+          '<span class="brh-cr-p">'+moneyFine(l.total)+'</span>'+
+          '<button type="button" class="brh-cr-x" data-brh-del="'+l.item.id+'" aria-label="Remove '+esc(l.item.name)+'"><svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></button>'+
+        '</div>';
+      }).join("");
+    }
+    q("[data-brh-count]").textContent = t.count;
+    q("[data-brh-cy]").textContent    = cy(t.volume);
+
+    var loads = CFG.truckCapacityCY > 0 ? t.volume / CFG.truckCapacityCY : 0;
+    q("[data-brh-meter]").style.setProperty("width", Math.min(100, loads*100).toFixed(1)+"%", "important");
+    q("[data-brh-truck]").textContent = !t.count
+      ? "Add items to see your truck load"
+      : loads < 1
+        ? "About " + Math.max(1, Math.round(loads*100)) + "% of one truck load"
+        : (Math.round(loads*10)/10) + " truck loads";
+
+    var extra = "";
+    if(t.minAdj > 0) extra += '<div class="brh-line"><span>Minimum service charge</span><b>'+money(CFG.minimumCharge)+'</b></div>';
+    t.addonLines.forEach(function(a){
+      extra += '<div class="brh-line"><span>'+esc(a.addon.label)+' (+'+a.addon.pct+'%)</span><b>'+money(a.amount)+'</b></div>';
+    });
+    q("[data-brh-side-extra]").innerHTML = extra;
+    q("[data-brh-total]").textContent = money(t.total);
+
+    q("[data-brh-mtotal]").textContent = money(t.total);
+    q("[data-brh-mmeta]").textContent  = t.count + (t.count===1?" item · ":" items · ") + cy(t.volume);
+    q("[data-brh-mbar]").hidden = !t.count || state.step === 4;
+  }
+
+  /* ---------- step 4 ---------- */
+  function renderQuote(){
+    var t = totals();
+    q("[data-brh-q-total]").textContent = money(t.total);
+    q("[data-brh-q-range]").textContent = "Most jobs like this land between " + money(t.low) + " and " + money(t.high);
+    q("[data-brh-q-vol]").textContent   = t.count + (t.count===1?" item":" items") + " · " + cy(t.volume) +
+      (CFG.truckCapacityCY>0 ? " · " + (t.volume/CFG.truckCapacityCY < 1
+        ? "about " + Math.max(1, Math.round(t.volume/CFG.truckCapacityCY*100)) + "% of a truck"
+        : (Math.round(t.volume/CFG.truckCapacityCY*10)/10) + " truck loads") : "");
+
+    var rows = t.lines.map(function(l){
+      return '<tr><td>'+esc(l.item.name)+' <span style="color:var(--brh-ink-3)!important;font-weight:700!important;">&times;'+l.qty+'</span>'+
+             '<div style="font-size:.78rem!important;color:var(--brh-ink-3)!important;">'+esc(l.item.cat)+' · '+cy(l.item.cy*l.qty)+'</div></td>'+
+             '<td>'+moneyFine(l.total)+'</td></tr>';
+    }).join("");
+    if(!t.lines.length) rows = '<tr><td>No items selected yet</td><td>'+money(0)+'</td></tr>';
+    rows += '<tr class="brh-bd-sub"><td>Items subtotal · '+cy(t.volume)+' &times; '+money(RATE)+'/cu yd</td><td>'+moneyFine(t.itemsTotal)+'</td></tr>';
+    if(t.minAdj > 0) rows += '<tr><td>Minimum service charge adjustment<div style="font-size:.78rem!important;color:var(--brh-ink-3)!important;">Small loads are billed at our '+money(CFG.minimumCharge)+' minimum</div></td><td>+'+moneyFine(t.minAdj)+'</td></tr>';
+    t.addonLines.forEach(function(a){
+      rows += '<tr><td>'+esc(a.addon.label)+' <span style="color:var(--brh-ink-3)!important;">(+'+a.addon.pct+'%)</span></td><td>+'+money(a.amount)+'</td></tr>';
+    });
+    rows += '<tr class="brh-bd-tot"><td>Estimated total</td><td>'+money(t.total)+'</td></tr>';
+    q("[data-brh-q-rows]").innerHTML = rows;
+
+    var cta = '<a class="brh-btn brh-btn-red" data-brh-tel href="#"><svg viewBox="0 0 24 24"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2Z"/></svg> Call '+esc(CFG.phone)+'</a>';
+    if(CFG.smsEnabled) cta += '<a class="brh-btn brh-btn-gold" data-brh-sms href="#"><svg viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9.9 9.9 0 0 1-2.8-.4L3 21l1.9-4.1A8.4 8.4 0 0 1 3 11.5 8.4 8.4 0 0 1 12 3a8.4 8.4 0 0 1 9 8.5Z"/></svg> Text us photos</a>';
+    if(CFG.webhookUrl) cta += '<button type="button" class="brh-btn brh-btn-gold" data-brh-send><svg viewBox="0 0 24 24"><path d="m22 2-7 20-4-9-9-4Z"/></svg> Request this pickup</button>';
+    if(CFG.quoteEmail)  cta += '<button type="button" class="brh-btn brh-btn-ghost" data-brh-email><svg viewBox="0 0 24 24"><path d="M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/><path d="m2 7 10 6 10-6"/></svg> Email my quote</button>';
+    cta += '<button type="button" class="brh-btn brh-btn-ghost" data-brh-copy><svg viewBox="0 0 24 24"><path d="M11 9h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2Z"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg> Copy my list</button>';
+    cta += '<button type="button" class="brh-btn brh-btn-ghost" data-brh-print><svg viewBox="0 0 24 24"><path d="M6 9V3h12v6M6 18H4v-7h16v7h-2"/><path d="M7 14h10v7H7Z"/></svg> Print / save PDF</button>';
+    q("[data-brh-cta]").innerHTML = cta;
+    wireTel();
+  }
+
+  /* ---------- plain-text summary ---------- */
+  function summaryText(){
+    var t = totals(), d = state.details, L = [];
+    L.push(CFG.businessName.toUpperCase() + " — JUNK REMOVAL ESTIMATE");
+    L.push("");
+    if(d.name)    L.push("Name:    " + d.name);
+    if(d.phone)   L.push("Phone:   " + d.phone);
+    if(d.email)   L.push("Email:   " + d.email);
+    if(d.address) L.push("Address: " + d.address);
+    if(d.zip)     L.push("ZIP:     " + d.zip);
+    if(d.date || d.window) L.push("Preferred: " + [d.date, d.window || "flexible"].filter(Boolean).join(" "));
+    if(d.notes)   L.push("Notes:   " + d.notes);
+    L.push("");
+    L.push("ITEMS (" + t.count + " total, " + cy(t.volume) + ")");
+    t.lines.forEach(function(l){
+      L.push("  " + l.qty + " x " + l.item.name + " (" + l.item.cat + ") — " + moneyFine(l.total));
+    });
+    L.push("");
+    L.push("Items subtotal: " + moneyFine(t.itemsTotal) + "  (" + cy(t.volume) + " x " + money(RATE) + "/cu yd)");
+    if(t.minAdj > 0) L.push("Minimum charge adjustment: +" + moneyFine(t.minAdj));
+    t.addonLines.forEach(function(a){ L.push(a.addon.label + " (+" + a.addon.pct + "%): +" + money(a.amount)); });
+    L.push("ESTIMATED TOTAL: " + money(t.total) + "   (range " + money(t.low) + "–" + money(t.high) + ")");
+    L.push("");
+    L.push("Estimate only. Excludes special disposal charges (mattresses, appliances,");
+    L.push("refrigerant units, tires, electronics, concrete, dirt, paint) and extra labor");
+    L.push("for unusually heavy or hard-to-access items. Final price confirmed on site.");
+    return L.join("\n");
+  }
+  function payload(){
+    var t = totals();
+    return {
+      source:"elementor-quote-calculator",
+      submittedAt:new Date().toISOString(),
+      customer:state.details,
+      acknowledged:state.ack,
+      pricing:{
+        ratePerCubicYard:RATE, minimumCharge:CFG.minimumCharge,
+        itemCount:t.count, cubicYards:t.volume, itemsSubtotal:t.itemsTotal,
+        minimumAdjustment:t.minAdj,
+        addons:t.addonLines.map(function(a){ return { id:a.addon.id, label:a.addon.label, pct:a.addon.pct, amount:a.amount }; }),
+        total:t.total, rangeLow:t.low, rangeHigh:t.high
+      },
+      items:t.lines.map(function(l){
+        return { id:l.item.id, name:l.item.name, category:l.item.cat, cubicYardsEach:l.item.cy, qty:l.qty, lineTotal:l.total };
+      }),
+      summaryText:summaryText()
+    };
+  }
+
+  /* ---------- validation + navigation ---------- */
+  function validate(step){
+    if(step === 1){
+      if(!totals().count){ flash("Add at least one item to get a price."); return false; }
+      return true;
+    }
+    if(step === 3){
+      var ok = true, d = state.details;
+      [["name", !!d.name.trim(), "Please enter your name"],
+       ["phone", d.phone.replace(/\D/g,"").length >= 10, "Enter a 10-digit phone number"],
+       ["zip", /^\d{5}(-\d{4})?$/.test(d.zip.trim()), "Enter a 5-digit ZIP code"],
+       ["email", !d.email.trim() || /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(d.email.trim()), "Check this email address"]
+      ].forEach(function(f){
+        var el = q('[data-brh-field="'+f[0]+'"]');
+        var old = q(".brh-err", el); if(old) old.remove();
+        if(f[1]){ el.setAttribute("data-invalid","0"); }
+        else {
+          el.setAttribute("data-invalid","1");
+          el.insertAdjacentHTML("beforeend",'<span class="brh-err">'+f[2]+'</span>');
+          ok = false;
+        }
+      });
+      if(!state.ack){ flash("Please confirm you understand this is an estimate."); ok = false; }
+      if(!ok){ var bad = q('[data-invalid="1"] input'); if(bad) bad.focus(); }
+      return ok;
+    }
+    return true;
+  }
+  var flashTimer = null;
+  function flash(msg){
+    var bar = q("[data-brh-flash]");
+    if(!bar){
+      bar = document.createElement("div");
+      bar.setAttribute("data-brh-flash","");
+      bar.className = "brh-note";
+      bar.style.setProperty("background","var(--brh-red-soft)","important");
+      bar.style.setProperty("border-color","#F3C9C4","important");
+      bar.style.setProperty("color","#8C1D12","important");
+      q(".brh-main").appendChild(bar);
+    }
+    bar.innerHTML = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg><div>'+esc(msg)+'</div>';
+    bar.hidden = false;
+    clearTimeout(flashTimer);
+    flashTimer = setTimeout(function(){ bar.hidden = true; }, 5000);
+  }
+  function go(step){
+    if(step > state.step){
+      for(var s = state.step; s < step; s++){ if(!validate(s)){ return; } }
+    }
+    state.step = step;
+    var f = q("[data-brh-flash]"); if(f) f.hidden = true;
+    qa("[data-brh-panel]").forEach(function(p){ p.hidden = (p.getAttribute("data-brh-panel") !== String(step)); });
+    qa("[data-brh-goto]").forEach(function(b){
+      var n = +b.getAttribute("data-brh-goto");
+      b.setAttribute("data-state", n === step ? "active" : (n < step ? "done" : "todo"));
+      b.innerHTML = '<span class="brh-step-n">'+(n < step
+        ? '<svg viewBox="0 0 24 24"><path d="m5 13 4 4L19 7"/></svg>'
+        : n)+'</span>'+["Your items","Access & extras","Your details","Your estimate"][n-1];
+    });
+    var nextBtn = q(".brh-side [data-brh-next]");
+    if(nextBtn){
+      nextBtn.hidden = step === 4;
+      nextBtn.textContent = step === 3 ? "See my estimate" : "Continue";
+    }
+    q("[data-brh-mbar]").hidden = !totals().count || step === 4;
+    if(step === 4) renderQuote();
+    var top = root.getBoundingClientRect().top + window.pageYOffset - 24;
+    if(window.pageYOffset > top) window.scrollTo({ top:top, behavior:"smooth" });
+  }
+
+  /* ---------- events ---------- */
+  root.addEventListener("click", function(ev){
+    var el, t = ev.target;
+    function up(sel){ return t.closest ? t.closest(sel) : null; }
+
+    if((el = up("[data-brh-inc]"))){ bump(el.getAttribute("data-brh-inc"), 1); return; }
+    if((el = up("[data-brh-dec]"))){ bump(el.getAttribute("data-brh-dec"), -1); return; }
+    if((el = up("[data-brh-del]"))){ delete state.qty[el.getAttribute("data-brh-del")]; refreshItems(); return; }
+    if((el = up("[data-brh-cat]"))){
+      state.cat = el.getAttribute("data-brh-cat");
+      state.search = "";
+      state.showAll = false;
+      q("[data-brh-search]").value = "";
+      q("[data-brh-search-clear]").hidden = true;
+      renderCats(); renderItems(); return;
+    }
+    if((el = up("[data-brh-addon]"))){
+      ev.preventDefault();
+      var id = el.getAttribute("data-brh-addon");
+      if(state.addons[id]) delete state.addons[id]; else state.addons[id] = true;
+      renderAddons(); renderCart(); return;
+    }
+    if(up("[data-brh-ack]")){
+      ev.preventDefault();
+      state.ack = !state.ack;
+      q("[data-brh-ack]").setAttribute("data-on", state.ack ? "1" : "0");
+      return;
+    }
+    if(up("[data-brh-search-clear]")){
+      state.search = "";
+      state.showAll = false;
+      q("[data-brh-search]").value = "";
+      q("[data-brh-search-clear]").hidden = true;
+      renderCats(); renderItems(); return;
+    }
+    if(up("[data-brh-next]")){ go(Math.min(4, state.step + 1)); return; }
+    if(up("[data-brh-back]")){ go(Math.max(1, state.step - 1)); return; }
+    if((el = up("[data-brh-goto]"))){ go(+el.getAttribute("data-brh-goto")); return; }
+    if(up("[data-brh-reset]")){
+      if(!totals().count || window.confirm("Clear your list and start over?")){
+        state.qty = {}; state.addons = {}; state.sent = false;
+        q("[data-brh-q-ok]").hidden = true;
+        renderAddons(); refreshItems(); go(1);
+      }
+      return;
+    }
+    if(up("[data-brh-more]")){ state.showAll = true; renderItems(); return; }
+    if(up("[data-brh-copy]")){ copySummary(); return; }
+    if(up("[data-brh-print]")){ printSummary(); return; }
+    if(up("[data-brh-email]")){ emailSummary(); return; }
+    if((el = up("[data-brh-send]"))){ sendWebhook(el); return; }
+  });
+
+  root.addEventListener("input", function(ev){
+    var t = ev.target;
+    if(t.hasAttribute("data-brh-search")){
+      state.search = t.value;
+      state.showAll = false;
+      q("[data-brh-search-clear]").hidden = !t.value;
+      renderCats(); renderItems();
+      return;
+    }
+    var key = t.getAttribute("data-brh-input");
+    if(key){ state.details[key] = t.value; }
+  });
+  root.addEventListener("change", function(ev){
+    var key = ev.target.getAttribute("data-brh-input");
+    if(key) state.details[key] = ev.target.value;
+  });
+  root.addEventListener("keydown", function(ev){
+    if(ev.key === "Enter" && ev.target.tagName === "INPUT" && ev.target.type !== "search"){
+      ev.preventDefault();
+      go(Math.min(4, state.step + 1));
+    }
+  });
+
+  function bump(id, d){
+    var n = (state.qty[id] || 0) + d;
+    if(n <= 0) delete state.qty[id]; else state.qty[id] = Math.min(999, n);
+    refreshItems();
+  }
+  function refreshItems(){ renderCats(); renderItems(); renderCart(); if(state.step === 4) renderQuote(); }
+
+  /* ---------- actions ---------- */
+  function copySummary(){
+    var text = summaryText();
+    function done(){ okMsg("Copied. Paste it into a text or email to us at " + CFG.phone + "."); }
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(done, function(){ legacyCopy(text, done); });
+    } else legacyCopy(text, done);
+  }
+  function legacyCopy(text, done){
+    var ta = document.createElement("textarea");
+    ta.value = text;
+    ta.setAttribute("style","position:fixed!important;left:-9999px!important;top:0!important;");
+    document.body.appendChild(ta); ta.select();
+    try{ document.execCommand("copy"); done(); }catch(e){ okMsg("Press Ctrl/Cmd+C to copy your list."); }
+    document.body.removeChild(ta);
+  }
+  function emailSummary(){
+    var t = totals();
+    var subj = "Junk removal quote — " + money(t.total) + " (" + t.count + " items)";
+    window.location.href = "mailto:" + encodeURIComponent(CFG.quoteEmail) +
+      "?subject=" + encodeURIComponent(subj) + "&body=" + encodeURIComponent(summaryText());
+  }
+  function printSummary(){
+    var w = window.open("", "_blank", "width=760,height=900");
+    if(!w){ okMsg("Your browser blocked the print window — use “Copy my list” instead."); return; }
+    var t = totals();
+    var rows = t.lines.map(function(l){
+      return "<tr><td>"+esc(l.item.name)+" &times;"+l.qty+"<br><small>"+esc(l.item.cat)+" · "+cy(l.item.cy*l.qty)+"</small></td><td>"+moneyFine(l.total)+"</td></tr>";
+    }).join("");
+    rows += '<tr class="s"><td>Items subtotal ('+cy(t.volume)+' &times; '+money(RATE)+'/cu yd)</td><td>'+moneyFine(t.itemsTotal)+'</td></tr>';
+    if(t.minAdj>0) rows += '<tr><td>Minimum service charge adjustment</td><td>+'+moneyFine(t.minAdj)+'</td></tr>';
+    t.addonLines.forEach(function(a){ rows += '<tr><td>'+esc(a.addon.label)+' (+'+a.addon.pct+'%)</td><td>+'+money(a.amount)+'</td></tr>'; });
+    rows += '<tr class="t"><td>Estimated total</td><td>'+money(t.total)+'</td></tr>';
+    var d = state.details;
+    var who = [d.name, d.phone, d.email, d.address, d.zip].filter(Boolean).map(esc).join(" · ");
+    w.document.write(
+      '<!doctype html><html><head><meta charset="utf-8"><title>Big Rich Hauling estimate</title><style>'+
+      'body{font-family:Arial,Helvetica,sans-serif;color:#23282D;margin:34px;}'+
+      'h1{color:#D5291B;font-size:20px;margin:0 0 2px;text-transform:uppercase;}'+
+      '.sub{color:#5C6670;font-size:12px;margin-bottom:18px;}'+
+      '.tot{background:#D5291B;color:#fff;padding:14px 18px;border-radius:10px;font-size:26px;font-weight:bold;}'+
+      '.tot small{display:block;font-size:11px;font-weight:normal;text-transform:uppercase;letter-spacing:1px;opacity:.9;}'+
+      'table{border-collapse:collapse;width:100%;margin-top:18px;font-size:13px;}'+
+      'td{border-bottom:1px solid #E2E6EA;padding:8px 6px;vertical-align:top;}'+
+      'td:last-child{text-align:right;white-space:nowrap;font-weight:bold;}'+
+      'small{color:#8A949E;}tr.s td{background:#F5F6F8;font-weight:bold;}'+
+      'tr.t td{background:#23282D;color:#fff;font-weight:bold;font-size:15px;}'+
+      '.fine{margin-top:16px;font-size:10.5px;color:#8A949E;line-height:1.55;}</style></head><body>'+
+      '<h1>'+esc(CFG.businessName)+'</h1><div class="sub">Junk removal estimate · '+esc(CFG.phone)+
+      ' · '+new Date().toLocaleDateString("en-US")+(who?'<br>'+who:'')+'</div>'+
+      '<div class="tot"><small>Estimated price</small>'+money(t.total)+
+      ' <span style="font-size:12px;font-weight:normal;">(range '+money(t.low)+'–'+money(t.high)+')</span></div>'+
+      '<table>'+rows+'</table>'+
+      '<div class="fine">Estimate based on estimated cubic yards &times; '+money(RATE)+' per cubic yard. Volumes are practical loading allowances, not manufacturer dimensions. Excludes facility disposal charges for mattresses, appliances, refrigerant units, tires, electronics, concrete, dirt and paint, and extra labor for unusually heavy, dense or hard-to-access items. Final price is confirmed on site before loading.</div>'+
+      '</body></html>');
+    w.document.close();
+    w.focus();
+    setTimeout(function(){ try{ w.print(); }catch(e){} }, 350);
+  }
+  function sendWebhook(btn){
+    if(state.sent) return;
+    var label = btn.innerHTML;
+    btn.setAttribute("disabled","disabled");
+    btn.innerHTML = "Sending…";
+    var body = JSON.stringify(payload());
+    fetch(CFG.webhookUrl, { method:"POST", headers:{ "Content-Type":"application/json" }, body:body })
+      .then(function(r){
+        if(!r.ok) throw new Error("HTTP " + r.status);
+        state.sent = true;
+        btn.innerHTML = "Request sent ✓";
+        okMsg("Got it — your request is in. We will call " + (state.details.phone || "you") + " to confirm your pickup window.");
+      })
+      .catch(function(){
+        btn.removeAttribute("disabled");
+        btn.innerHTML = label;
+        okMsg("We could not send that automatically. Please call " + CFG.phone + " — your estimate is saved on this screen.", true);
+      });
+  }
+  function okMsg(msg, isErr){
+    var box = q("[data-brh-q-ok]");
+    box.className = "brh-ok-msg";
+    if(isErr){
+      box.style.setProperty("background","var(--brh-red-soft)","important");
+      box.style.setProperty("border-color","#F3C9C4","important");
+      box.style.setProperty("color","#8C1D12","important");
+    } else {
+      box.style.removeProperty("background");
+      box.style.removeProperty("border-color");
+      box.style.removeProperty("color");
+    }
+    box.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 21a9 9 0 1 0-9-9 9 9 0 0 0 9 9Z"/><path d="m8.5 12.5 2.5 2.5 4.5-5"/></svg><div>'+esc(msg)+'</div>';
+    box.hidden = false;
+  }
+
+  /* ---------- boot ---------- */
+  function wireTel(){
+    qa("[data-brh-phone]").forEach(function(el){ el.textContent = CFG.phone; });
+    qa("[data-brh-tel]").forEach(function(a){ a.setAttribute("href","tel:" + CFG.phoneDial); });
+    qa("[data-brh-sms]").forEach(function(a){
+      a.setAttribute("href","sms:" + CFG.phoneDial + "?&body=" + encodeURIComponent("Hi Big Rich Hauling — here is my junk removal list:\n\n" + summaryText()));
+    });
+  }
+  q("[data-brh-rate]").textContent  = money(RATE);
+  q("[data-brh-rate2]").textContent = money(RATE);
+  var di = q('[data-brh-input="date"]');
+  if(di){
+    var d = new Date(); d.setHours(12,0,0,0);
+    di.setAttribute("min", d.toISOString().slice(0,10));
+  }
+  wireTel();
+  renderCats(); renderItems(); renderAddons(); renderCart(); go(1);
+})();
+</script>
+</div>
+
+</body>
+</html>
