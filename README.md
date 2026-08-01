@@ -30,8 +30,11 @@ Matches the reference estimator screen for screen:
 | **Before You Begin** | Welcome copy, the four accuracy tips, and the "estimate, not a final quote — you'll pay less, not more" note. The **Get started** button stays disabled until the customer ticks *I understand*. |
 | **1. Select Items** | "Include everything" warning, search across all 640 items, a 20-room category grid, and item cards with a gold **+** that becomes a −/qty/+ stepper. **No prices are shown here** — the header cart chip just counts items, and the hint below reads *"your price will be revealed on the next steps after you provide your info."* |
 | **2. Your Info** | Name, phone, email, service address, city/area, ZIP, notes — all validated. Plus optional *extra labor* flags (upstairs/downstairs, long carry, dismantling, heavy items) that are sent with the booking but do not change the estimate. |
-| **3. Schedule** | Preferred date (today onward) and one of six two-hour pickup windows. |
-| **4. Review & Price** | "Your quote is ready" → the headline total, an itemized breakdown with the minimum-charge adjustment, a booking-details card, the accessibility/disposal note, and **Confirm booking**. Also call, copy and print/PDF. |
+| **3. Your Estimate** | "Your quote is ready" → the headline total, an itemized breakdown with the minimum-charge adjustment, a booking-details card, the accessibility/disposal note. Also call, copy and print/PDF. |
+| **4. Book Your Time** | The Workiz online-booking calendar, embedded inline. The lead is sent **before** this screen opens, so a customer who abandons the calendar is still captured. |
+
+With `booking.mode: "none"` the flow instead becomes Select Items → Your Info → **Schedule**
+(the widget's own date + six two-hour windows) → Your Estimate, ending in **Confirm booking**.
 
 The header cart chip opens a list where items can be adjusted or removed from any screen, and the
 step markers at the top let the customer jump back to an earlier screen without losing anything.
@@ -52,7 +55,48 @@ truth. `build.py` refuses to build if any row's stated price disagrees with `cub
 
 ---
 
-## Where bookings go
+## The booking calendar
+
+`BRH_CONFIG.booking` embeds the Workiz online-booking calendar as the final step, so the customer
+picks their slot without leaving the page.
+
+```js
+booking: {
+  mode          : "workiz",                     // "workiz" | "none"
+  url           : "https://online-booking.workiz.com/?ac=…",
+  height        : 780,
+  prefillParams : { name:"name", phone:"phone", email:"email", address:"address" }
+}
+```
+
+Three things worth understanding about it:
+
+- **It replaces the widget's own scheduling step.** Otherwise the customer picks a time twice — once
+  in our form and once in the calendar — and only the second one is real. With `mode: "workiz"` the
+  Schedule step is dropped from the flow automatically.
+- **The lead is sent before the calendar loads.** The quote screen's button reads *Continue to
+  scheduling*; pressing it submits the booking to your provider and only then reveals the calendar.
+  Abandoning the calendar (common with embedded booking widgets) therefore still leaves you a lead
+  with the full item list. If the send fails, the customer is still taken to the calendar and
+  prompted to paste their details in — the booking is never blocked by our own plumbing.
+- **The iframe is loaded lazily**, only when that step is reached, so it costs nothing on page load.
+
+### About prefilling
+
+The calendar is a third-party page, so we cannot read it, fill it programmatically, or detect
+whether the customer completed it — the browser forbids all three across origins.
+
+`prefillParams` appends the customer's details to the iframe URL as query parameters. **Workiz does
+not document prefill parameters**, so this is best-effort: if it ignores them nothing breaks, the
+customer just retypes their name and phone. Test it once and see. If Workiz uses different parameter
+names, put them in the map (e.g. `{ name:"customer_name", phone:"customer_phone" }`); set it to `{}`
+to send a clean URL.
+
+Because a retype is possible, the booking screen shows the customer's details with a **Copy my
+details** button — one tap puts their name, phone, address, estimate and item list on the clipboard
+to paste into the booking form's notes.
+
+## Where the lead goes
 
 `BRH_CONFIG.submit.provider` picks the destination. Four options:
 

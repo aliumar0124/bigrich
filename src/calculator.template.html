@@ -255,6 +255,17 @@
 #brh-quote .brh-msg[data-kind="err"] svg{color:var(--brh-red)!important;}
 #brh-quote .brh-extras{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(190px,1fr))!important;gap:11px!important;margin-top:16px!important;}
 
+/* ===== embedded booking calendar ======================================= */
+#brh-quote .brh-booked{display:flex!important;gap:11px!important;align-items:flex-start!important;padding:14px 16px!important;border-radius:12px!important;background:#EAF7EF!important;border:1px solid #BFE4CD!important;color:#15613A!important;font-size:.9rem!important;line-height:1.55!important;margin-bottom:14px!important;}
+#brh-quote .brh-booked svg{color:var(--brh-ok)!important;width:1.25em!important;height:1.25em!important;margin-top:2px!important;}
+#brh-quote .brh-booked b{font-weight:800!important;}
+#brh-quote .brh-booked .brh-booked-sub{display:block!important;margin-top:3px!important;font-weight:500!important;color:#1F6B44!important;}
+#brh-quote .brh-bookbar{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:12px!important;flex-wrap:wrap!important;padding:12px 15px!important;border:1.5px solid var(--brh-line)!important;border-radius:11px!important;background:var(--brh-bg-2)!important;margin-bottom:14px!important;}
+#brh-quote .brh-bookbar-t{font-size:.86rem!important;font-weight:600!important;color:var(--brh-ink-2)!important;min-width:0!important;}
+#brh-quote .brh-frame-wrap{position:relative!important;border:1.5px solid var(--brh-line)!important;border-radius:12px!important;overflow:hidden!important;background:#fff!important;}
+#brh-quote .brh-frame-wrap iframe{display:block!important;width:100%!important;border:0!important;background:#fff!important;min-height:520px!important;}
+#brh-quote .brh-frame-load{position:absolute!important;left:0!important;right:0!important;top:0!important;bottom:0!important;display:flex!important;align-items:center!important;justify-content:center!important;background:var(--brh-bg-2)!important;color:var(--brh-ink-2)!important;font-size:.9rem!important;font-weight:600!important;}
+
 /* ===== buttons ========================================================= */
 #brh-quote .brh-btn{display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:10px!important;padding:15px 26px!important;border-radius:11px!important;font-size:.95rem!important;font-weight:800!important;text-align:center!important;border:2px solid transparent!important;text-transform:uppercase!important;letter-spacing:.8px!important;}
 #brh-quote .brh-btn-gold{background:var(--brh-gold)!important;color:#fff!important;box-shadow:0 4px 12px rgba(196,160,82,.35)!important;}
@@ -361,8 +372,8 @@
       </p>
     </section>
 
-    <!-- ================= 1 · SELECT ITEMS ================= -->
-    <section class="brh-pane" data-brh-screen="1" hidden>
+    <!-- ================= SELECT ITEMS ================= -->
+    <section class="brh-pane" data-brh-screen="items" hidden>
       <div class="brh-pane-h">
         <h2>What do you need hauled away?</h2>
         <p>Select every item — room by room, garage, backyard, everything.</p>
@@ -386,8 +397,8 @@
       <p class="brh-hint">Your price will be revealed on the next steps after you provide your info</p>
     </section>
 
-    <!-- ================= 2 · YOUR INFO ================= -->
-    <section class="brh-pane" data-brh-screen="2" hidden>
+    <!-- ================= YOUR INFO ================= -->
+    <section class="brh-pane" data-brh-screen="info" hidden>
       <div class="brh-pane-h">
         <h2>Your information</h2>
         <p>We'll use this to confirm your booking and send updates.</p>
@@ -424,8 +435,8 @@
       </div>
     </section>
 
-    <!-- ================= 3 · SCHEDULE ================= -->
-    <section class="brh-pane" data-brh-screen="3" hidden>
+    <!-- ================= SCHEDULE (own date/window — unused when booking.mode is "workiz") ================= -->
+    <section class="brh-pane" data-brh-screen="schedule" hidden>
       <div class="brh-pane-h">
         <h2>Schedule your pickup</h2>
         <p>Same-day and next-day availability in most areas.</p>
@@ -444,8 +455,8 @@
       </div>
     </section>
 
-    <!-- ================= 4 · REVIEW & PRICE ================= -->
-    <section class="brh-pane" data-brh-screen="4" hidden>
+    <!-- ================= REVIEW & PRICE ================= -->
+    <section class="brh-pane" data-brh-screen="quote" hidden>
       <div class="brh-qhero">
         <span class="brh-pill">Your quote is ready</span>
         <h2>Your estimated total</h2>
@@ -479,6 +490,40 @@
         <a class="brh-btn brh-btn-ghost brh-btn-sm" data-brh-tel href="#"><svg viewBox="0 0 24 24"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2Z"/></svg> Call <span data-brh-phone>—</span></a>
         <button type="button" class="brh-btn brh-btn-ghost brh-btn-sm" data-brh-copy><svg viewBox="0 0 24 24"><path d="M11 9h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2Z"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg> Copy my quote</button>
         <button type="button" class="brh-btn brh-btn-ghost brh-btn-sm" data-brh-print><svg viewBox="0 0 24 24"><path d="M6 9V3h12v6M6 18H4v-7h16v7h-2"/><path d="M7 14h10v7H7Z"/></svg> Print / save PDF</button>
+      </div>
+    </section>
+
+    <!-- ================= BOOK YOUR TIME (embedded calendar) ================= -->
+    <section class="brh-pane" data-brh-screen="book" hidden>
+      <div class="brh-pane-h">
+        <h2>Pick your pickup time</h2>
+        <p>Choose a slot on our live schedule below and you're booked — no phone call needed.</p>
+      </div>
+
+      <div class="brh-booked">
+        <svg viewBox="0 0 24 24"><path d="M12 21a9 9 0 1 0-9-9 9 9 0 0 0 9 9Z"/><path d="m8.5 12.5 2.5 2.5 4.5-5"/></svg>
+        <div>
+          <b>Your estimate is saved and already sent to us — <span data-brh-booked-total>$0.00</span>.</b>
+          <span class="brh-booked-sub">If the calendar asks for your details again, tap <b>Copy my details</b> and paste them in. Nothing you've entered is lost.</span>
+        </div>
+      </div>
+
+      <div class="brh-bookbar">
+        <span class="brh-bookbar-t" data-brh-booked-who></span>
+        <button type="button" class="brh-btn brh-btn-ghost brh-btn-sm" data-brh-copydetails><svg viewBox="0 0 24 24"><path d="M11 9h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2Z"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg> Copy my details</button>
+      </div>
+
+      <div class="brh-frame-wrap">
+        <div class="brh-frame-load" data-brh-frame-load>Loading our live schedule…</div>
+        <iframe data-brh-frame title="Online booking calendar" loading="lazy"
+                referrerpolicy="no-referrer-when-downgrade"></iframe>
+      </div>
+
+      <div data-brh-msg-book hidden></div>
+
+      <div class="brh-nav">
+        <button type="button" class="brh-btn brh-btn-ghost" data-brh-back><svg viewBox="0 0 24 24"><path d="M19 12H5M11 18l-6-6 6-6"/></svg> Back to my quote</button>
+        <a class="brh-btn brh-btn-gold brh-grow" data-brh-tel href="#"><svg viewBox="0 0 24 24"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2Z"/></svg> Rather book by phone? Call <span data-brh-phone>—</span></a>
       </div>
     </section>
   </div>
@@ -530,6 +575,28 @@
       autoReply     : true                       /* customer copy (formsubmit/wordpress only) */
     },
 
+    /* ---- BOOKING CALENDAR ------------------------------------------------
+       mode "workiz": after the estimate, the Workiz online-booking calendar is
+                      embedded as a final step, so the customer picks their slot
+                      without leaving the page. This REPLACES the widget's own
+                      date/time step — otherwise they would choose a time twice.
+       mode "none":   the widget collects a preferred date and window itself and
+                      the booking ends with "Confirm booking".
+
+       The lead is always sent (GHL / email) BEFORE the calendar is shown, so a
+       customer who abandons the calendar is still captured.
+
+       prefillParams maps our data onto query-string names. Workiz does not
+       document prefill parameters, so treat this as best-effort: unknown
+       parameters are ignored, they cannot break the form. Set to {} to send a
+       clean URL. */
+    booking: {
+      mode          : "workiz",
+      url           : "https://online-booking.workiz.com/?ac=4453b7625b5e69cdea74b005bb1ae29dd8aac9da3be7bf4d5d0aacd4a0f67c93",
+      height        : 780,
+      prefillParams : { name:"name", phone:"phone", email:"email", address:"address" }
+    },
+
     /* Cities offered in the "City / area" dropdown. */
     cities: ["Sacramento","Elk Grove","Roseville","Folsom","Citrus Heights","Rancho Cordova",
              "Carmichael","Fair Oaks","Orangevale","Antelope","North Highlands","Rocklin",
@@ -567,7 +634,27 @@
   var CFG = BRH_CONFIG;
   var RATE = CFG.ratePerCubicYard;
   var LOADED_AT = Date.now();
-  var STEP_LABELS = ["Select Items","Your Info","Schedule","Review & Price"];
+
+  /* The flow is config-driven. With an embedded calendar the widget's own
+     date/window step is dropped — the calendar owns scheduling, and asking
+     twice is the fastest way to lose someone. */
+  var BOOKING_ON = CFG.booking && CFG.booking.mode === "workiz" && !!CFG.booking.url;
+  var FLOW = BOOKING_ON
+    ? ["items", "info", "quote", "book"]
+    : ["items", "info", "schedule", "quote"];
+  var STEP_LABELS = {
+    items:"Select Items", info:"Your Info", schedule:"Schedule",
+    quote:"Your Estimate", book:"Book Your Time"
+  };
+  function stepIndex(screen){ return FLOW.indexOf(screen); }
+  function nextScreen(){
+    var i = state.screen === "intro" ? -1 : stepIndex(state.screen);
+    return FLOW[Math.min(FLOW.length - 1, i + 1)];
+  }
+  function prevScreen(){
+    var i = stepIndex(state.screen);
+    return i <= 0 ? "intro" : FLOW[i - 1];
+  }
   var ALL = [], BY_ID = {};
   BRH_DATA.forEach(function(cat){
     cat.i.forEach(function(row){
@@ -709,7 +796,7 @@
   function renderCart(){
     var t = totals();
     var chip = q("[data-brh-cartchip]");
-    chip.hidden = !t.count || state.screen === "intro";
+    chip.hidden = !t.count || state.screen === "intro" || state.screen === "book";
     q("[data-brh-cartcount]").textContent = t.count + (t.count===1 ? " item selected" : " items selected");
     var panel = q("[data-brh-cartpanel]");
     panel.hidden = !state.cartOpen || !t.count;
@@ -726,7 +813,7 @@
         '</div>';
       }).join("");
     }
-    var next = q('[data-brh-screen="1"] [data-brh-next]');
+    var next = q('[data-brh-screen="items"] [data-brh-next]');
     if(t.count) next.removeAttribute("disabled"); else next.setAttribute("disabled","disabled");
   }
 
@@ -897,11 +984,11 @@
   }
   function validate(screen){
     var d = state.details, ok = true;
-    if(screen === 1){
+    if(screen === "items"){
       if(!totals().count){ return false; }
       return true;
     }
-    if(screen === 2){
+    if(screen === "info"){
       ok = fieldError("name", !!d.name.trim(), "Please enter your name") && ok;
       ok = fieldError("phone", d.phone.replace(/\D/g,"").length >= 10, "Enter a 10-digit phone number") && ok;
       ok = fieldError("email", /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(d.email.trim()), "Enter a valid email address") && ok;
@@ -911,7 +998,7 @@
       if(!ok){ var bad = q('[data-invalid="1"] input, [data-invalid="1"] select'); if(bad) bad.focus(); }
       return ok;
     }
-    if(screen === 3){
+    if(screen === "schedule"){
       ok = fieldError("date", !!d.date, "Please choose a preferred date") && ok;
       ok = fieldError("window", !!d.window, "Please choose a time window") && ok;
       return ok;
@@ -921,9 +1008,11 @@
 
   /* ---------- navigation ---------- */
   function show(screen){
-    if(screen !== "intro" && screen > state.screen){
-      for(var s = (state.screen === "intro" ? 1 : state.screen); s < screen; s++){
-        if(!validate(s)) return;
+    var target = stepIndex(screen);
+    if(screen !== "intro" && target > stepIndex(state.screen)){
+      /* validate every screen being skipped past, not just the current one */
+      for(var i = Math.max(0, stepIndex(state.screen)); i < target; i++){
+        if(!validate(FLOW[i])){ return; }
       }
     }
     state.screen = screen;
@@ -934,19 +1023,21 @@
     var steps = q("[data-brh-steps]");
     steps.hidden = screen === "intro";
     if(!steps.hidden){
-      steps.innerHTML = STEP_LABELS.map(function(label,i){
-        var n = i + 1, st = n === screen ? "active" : (n < screen ? "done" : "todo");
-        return '<li data-done="'+(n < screen ? 1 : 0)+'" data-current="'+(n === screen ? 1 : 0)+'">'+
-          '<button type="button" class="brh-step" data-state="'+st+'" data-brh-goto="'+n+'">'+
-            '<span class="brh-step-n">'+(n < screen ? '<svg viewBox="0 0 24 24"><path d="m5 13 4 4L19 7"/></svg>' : n)+'</span>'+
-            '<span>'+esc(label)+'</span>'+
+      var here = stepIndex(screen);
+      steps.innerHTML = FLOW.map(function(key, i){
+        var st = i === here ? "active" : (i < here ? "done" : "todo");
+        return '<li data-done="'+(i < here ? 1 : 0)+'" data-current="'+(i === here ? 1 : 0)+'">'+
+          '<button type="button" class="brh-step" data-state="'+st+'" data-brh-goto="'+esc(key)+'">'+
+            '<span class="brh-step-n">'+(i < here ? '<svg viewBox="0 0 24 24"><path d="m5 13 4 4L19 7"/></svg>' : (i + 1))+'</span>'+
+            '<span>'+esc(STEP_LABELS[key])+'</span>'+
           '</button>'+
-          (n < STEP_LABELS.length ? '<span class="brh-rail"></span>' : '')+
+          (i < FLOW.length - 1 ? '<span class="brh-rail"></span>' : '')+
         '</li>';
       }).join("");
     }
     renderCart();
-    if(screen === 4) renderQuote();
+    if(screen === "quote") renderQuote();
+    if(screen === "book") openCalendar();
     var top = root.getBoundingClientRect().top + window.pageYOffset - 24;
     if(window.pageYOffset > top) window.scrollTo({ top:top, behavior:"smooth" });
     else if(screen !== "intro") window.scrollTo({ top:top, behavior:"smooth" });
@@ -989,7 +1080,7 @@
       if(state.ack) start.removeAttribute("disabled"); else start.setAttribute("disabled","disabled");
       return;
     }
-    if(up("[data-brh-start]")){ if(state.ack) show(1); return; }
+    if(up("[data-brh-start]")){ if(state.ack) show(FLOW[0]); return; }
     if(up("[data-brh-search-clear]")){
       state.search = "";
       q("[data-brh-search]").value = "";
@@ -1001,18 +1092,15 @@
     if(up("[data-brh-cartclose]")){ state.cartOpen = false; renderCart(); return; }
     if(up("[data-brh-clear]")){
       if(window.confirm("Remove all items from your list?")){
-        state.qty = {}; state.cartOpen = false; refresh(); show(1);
+        state.qty = {}; state.cartOpen = false; refresh(); show(FLOW[0]);
       }
       return;
     }
-    if(up("[data-brh-next]")){ show(Math.min(4, (state.screen === "intro" ? 1 : state.screen) + 1)); return; }
-    if(up("[data-brh-back]")){
-      var s = state.screen === "intro" ? "intro" : state.screen - 1;
-      show(s < 1 ? "intro" : s);
-      return;
-    }
-    if((el = up("[data-brh-goto]"))){ show(+el.getAttribute("data-brh-goto")); return; }
+    if(up("[data-brh-next]")){ show(nextScreen()); return; }
+    if(up("[data-brh-back]")){ show(prevScreen()); return; }
+    if((el = up("[data-brh-goto]"))){ show(el.getAttribute("data-brh-goto")); return; }
     if((el = up("[data-brh-confirm]"))){ confirmBooking(el); return; }
+    if(up("[data-brh-copydetails]")){ copyDetails(); return; }
     if(up("[data-brh-copy]")){ copySummary(); return; }
     if(up("[data-brh-print]")){ printSummary(); return; }
   });
@@ -1030,12 +1118,12 @@
   });
   root.addEventListener("change", function(ev){
     var key = ev.target.getAttribute("data-brh-input");
-    if(key){ state.details[key] = ev.target.value; if(state.screen === 2 || state.screen === 3) fieldError(key, true, ""); }
+    if(key){ state.details[key] = ev.target.value; if(state.screen === "info" || state.screen === "schedule") fieldError(key, true, ""); }
   });
   root.addEventListener("keydown", function(ev){
     if(ev.key === "Enter" && ev.target.tagName === "INPUT" && ev.target.type !== "search"){
       ev.preventDefault();
-      show(Math.min(4, (state.screen === "intro" ? 1 : state.screen) + 1));
+      show(nextScreen());
     }
   });
 
@@ -1046,7 +1134,66 @@
   }
   function refresh(){
     renderCats(); renderItems(); renderCart();
-    if(state.screen === 4) renderQuote();
+    if(state.screen === "quote") renderQuote();
+  }
+
+  /* ---------- embedded booking calendar ---------- */
+  /* The calendar is a third-party page in an iframe, so we cannot read it, fill
+     it, or know whether the customer completed it. That is exactly why the lead
+     is sent before this screen opens: whatever happens inside the frame, the
+     booking request is already with us. */
+  function calendarUrl(){
+    var d = state.details, map = CFG.booking.prefillParams || {};
+    var values = { name:d.name, phone:d.phone, email:d.email,
+                   address:[d.address, d.city, d.zip].filter(Boolean).join(", ") };
+    var parts = [];
+    Object.keys(map).forEach(function(k){
+      var v = values[k];
+      if(v && map[k]) parts.push(encodeURIComponent(map[k]) + "=" + encodeURIComponent(v));
+    });
+    if(!parts.length) return CFG.booking.url;
+    return CFG.booking.url + (CFG.booking.url.indexOf("?") === -1 ? "?" : "&") + parts.join("&");
+  }
+  function openCalendar(){
+    var frame = q("[data-brh-frame]"), loader = q("[data-brh-frame-load]");
+    if(!frame) return;
+    var t = totals(), d = state.details;
+    q("[data-brh-booked-total]").textContent = money(t.total);
+    q("[data-brh-booked-who]").textContent =
+      [d.name, d.phone, [d.address, d.city, d.zip].filter(Boolean).join(", ")].filter(Boolean).join(" · ");
+    if(CFG.booking.height) frame.style.setProperty("height", CFG.booking.height + "px", "important");
+    if(frame.getAttribute("data-loaded") === "1") return;   /* load once */
+    frame.setAttribute("data-loaded", "1");
+    if(loader) loader.hidden = false;
+    frame.addEventListener("load", function(){ if(loader) loader.hidden = true; });
+    /* if the calendar refuses to frame or is slow, say so rather than showing a blank box */
+    setTimeout(function(){
+      if(loader && !loader.hidden){
+        loader.textContent = "Still loading the schedule… if it doesn't appear, call " + CFG.phone + " and we'll book you in.";
+      }
+    }, 8000);
+    frame.setAttribute("src", calendarUrl());
+  }
+  function copyDetails(){
+    var d = state.details, t = totals();
+    var lines = [
+      d.name, d.phone, d.email,
+      [d.address, d.city, d.zip].filter(Boolean).join(", "),
+      "", "Estimate: " + money(t.total) + " (" + t.count + (t.count === 1 ? " item" : " items") + ")",
+      t.lines.map(function(l){ return l.qty + " x " + l.item.name; }).join(", ")
+    ].filter(function(x){ return x !== undefined && x !== null; });
+    var text = lines.join("\n");
+    function done(){ bookMsg("Copied — paste it into the booking form."); }
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(done, function(){ legacyCopy(text, done); });
+    } else legacyCopy(text, done);
+  }
+  function bookMsg(text){
+    var box = q("[data-brh-msg-book]");
+    box.className = "brh-msg";
+    box.setAttribute("data-kind", "ok");
+    box.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 21a9 9 0 1 0-9-9 9 9 0 0 0 9 9Z"/><path d="m8.5 12.5 2.5 2.5 4.5-5"/></svg><div>'+esc(text)+'</div>';
+    box.hidden = false;
   }
 
   /* ---------- submit ---------- */
@@ -1076,7 +1223,7 @@
   }
   function confirmBooking(btn){
     if(state.booked) return;
-    if(!validate(2) || !validate(3)){
+    if(!validate("info") || (!BOOKING_ON && !validate("schedule"))){
       msg("Please complete your information before confirming.", "err");
       return;
     }
@@ -1086,10 +1233,22 @@
       state.booked = true;
       btn.innerHTML = "Booking request sent ✓";
       btn.setAttribute("disabled","disabled");
+      if(BOOKING_ON) show("book");
       return;
     }
     var dest = destination();
-    if(!dest){ mailtoFallback(); return; }
+    if(!dest){
+      if(BOOKING_ON){
+        /* Hijacking someone to their mail app one tap before the calendar is a
+           good way to lose the booking. Send them on, and prompt the paste
+           instead so the item list still reaches us via the booking notes. */
+        show("book");
+        bookMsg("Add your item list to the booking notes — tap “Copy my details” above and paste it in.");
+        return;
+      }
+      mailtoFallback();
+      return;
+    }
 
     var label = btn.innerHTML;
     btn.setAttribute("disabled","disabled");
@@ -1119,6 +1278,12 @@
   }
   function succeed(btn){
     state.booked = true;
+    if(BOOKING_ON){
+      /* the lead is safely with us; now hand over to the calendar */
+      btn.innerHTML = "Opening the schedule…";
+      show("book");
+      return;
+    }
     btn.innerHTML = "Booking request sent ✓";
     msg("Thank you! Your request is in — we'll call " + (state.details.phone || "you") +
         " shortly to confirm your pickup. Need it sooner? Call " + CFG.phone + ".");
@@ -1126,6 +1291,14 @@
   function failToEmail(btn, label){
     btn.removeAttribute("disabled");
     btn.innerHTML = label;
+    if(BOOKING_ON){
+      /* Don't derail someone who is one tap from booking. The calendar still
+         captures the job; they just need to paste their item list into it. */
+      show("book");
+      bookMsg("We couldn't attach your item list automatically — tap “Copy my details” above and " +
+              "paste it into the booking notes, or call " + CFG.phone + ".");
+      return;
+    }
     msg("We couldn't send that automatically. Opening your email app with the quote attached instead — " +
         "or just call " + CFG.phone + ".", "err");
     setTimeout(mailtoFallback, 900);
@@ -1261,6 +1434,12 @@
   }
 
   /* ---------- boot ---------- */
+  if(BOOKING_ON){
+    var confirmBtn = q("[data-brh-confirm]");
+    if(confirmBtn){
+      confirmBtn.innerHTML = 'Continue to scheduling <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
+    }
+  }
   qa("[data-brh-phone]").forEach(function(el){ el.textContent = CFG.phone; });
   qa("[data-brh-tel]").forEach(function(a){ a.setAttribute("href","tel:" + CFG.phoneDial); });
   var di = q('[data-brh-input="date"]');
