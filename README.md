@@ -383,6 +383,31 @@ All of them live in the `BRH_CONFIG` block near the top of the `<script>` in the
 
 ---
 
+## If raw code appears on the page and the buttons are dead
+
+Symptom: the widget renders, but partway down the page a block of JavaScript shows up as visible
+text, nothing is clickable, and "Prefer to call?" shows a dash instead of the phone number —
+**often only for logged-out visitors, not for admins.**
+
+That means the inline `<script>` was cut short, so no JavaScript ran at all. The usual cause is a
+plugin that injects its code with a plain `str_replace` on the **first closing `</body>` tag it
+finds in the page**. If a string inside our script contains that literal, the injection lands in the
+middle of our code, ends the script element early, and the browser renders the remainder as text.
+It shows up only for visitors because analytics, chat-widget and cache plugins typically skip
+logged-in admins.
+
+The widget is now built so there is nothing for such a plugin to match:
+
+- The print view is constructed with DOM calls into a hidden iframe, never by concatenating an HTML
+  document as a string. That also removed the popup, which mobile browsers frequently block.
+- `build.py` **fails the build** if any of `</body`, `</html`, `</head`, `</script`, `</style`,
+  `</title` or `<!doctype` reappears inside the script.
+- Config comments use `/* */` rather than `//`, so a minifier that strips newlines can't comment out
+  the rest of the file — a second, independent route to the same symptom.
+
+If you ever see it again after editing the widget, run `python3 build.py` and read the error; that
+check exists precisely to catch it before it reaches the site.
+
 ## Elementor / theme style collisions
 
 This was a main design constraint, so it is handled defensively:

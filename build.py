@@ -139,6 +139,38 @@ def trim(number):
     return text[1:] if text.startswith("0.") else text
 
 
+# Markup literals that must never appear inside the widget's <script>. Many
+# WordPress plugins inject their code with a plain str_replace on the first
+# closing body/head tag in the page. If one of those sits inside our inline
+# script, the injection lands mid-script, ends the script element early, and
+# the rest of the code renders on the page as visible text with every button
+# dead. Build the print view with DOM calls instead of tag strings.
+FORBIDDEN_IN_SCRIPT = ("</body", "</html", "</head", "</script", "</style", "</title", "<!doctype")
+
+
+def check_script(html):
+    """Fail the build if the inline script contains markup a plugin can match."""
+    # rsplit, not split: the file's own header comment mentions the script tag,
+    # and splitting there would scan the widget markup too.
+    if "<script>" not in html:
+        raise SystemExit("Refusing to build: no script element found in the template")
+    script = html.rsplit("<script>", 1)[1].rsplit("</scr" + "ipt>", 1)[0]
+    found = []
+    for seq in FORBIDDEN_IN_SCRIPT:
+        idx = script.lower().find(seq)
+        if idx != -1:
+            found.append((seq, script[max(0, idx - 60):idx + 30].replace("\n", " ")))
+    if found:
+        lines = "\n".join(f"    {seq!r} near: …{ctx}…" for seq, ctx in found)
+        raise SystemExit(
+            "Refusing to build: the inline script contains markup literals.\n"
+            "A WordPress plugin that injects before the first closing body tag would\n"
+            "truncate the script and dump the rest of the code onto the page as text.\n"
+            f"{lines}\n"
+            "    Build that markup with DOM calls (see printSummary) instead of strings."
+        )
+
+
 def main():
     rate, categories = load_items()
     template = TEMPLATE.read_text(encoding="utf-8")
@@ -150,6 +182,7 @@ def main():
         raise SystemExit("Data placeholder missing from the template")
 
     html = head + as_js(categories) + tail
+    check_script(html)
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(html, encoding="utf-8")
 

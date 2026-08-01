@@ -491,8 +491,8 @@
      BRH_CONFIG — everything you may want to change lives here.
      ========================================================================== */
   var BRH_CONFIG = {
-    ratePerCubicYard : 40,          // $ per cubic yard (master price list basis)
-    minimumCharge    : 95,          // minimum service charge applied to every job
+    ratePerCubicYard : 40,          /* $ per cubic yard (master price list basis) */
+    minimumCharge    : 95,          /* minimum service charge applied to every job */
     phone            : "916-252-9500",
     phoneDial        : "+19162529500",
     businessName     : "Big Rich Hauling & Junk Removal",
@@ -522,21 +522,21 @@
        a lead is never silently lost. */
     submit: {
       provider      : "ghl",
-      ghlWebhookUrl : "",   // <-- PASTE your GHL Inbound Webhook URL here
+      ghlWebhookUrl : "",   /* <-- PASTE your GHL Inbound Webhook URL here */
       wordpressUrl  : "/wp-admin/admin-ajax.php?action=brh_booking",
       formsubmitUrl : "https://formsubmit.co/ajax/bigrichhauling@att.net",
-      email         : "bigrichhauling@att.net",  // mailto fallback + FormSubmit target
-      leadSource    : "Website Estimator",       // stamped on the GHL contact
-      autoReply     : true                       // customer copy (formsubmit/wordpress only)
+      email         : "bigrichhauling@att.net",  /* mailto fallback + FormSubmit target */
+      leadSource    : "Website Estimator",       /* stamped on the GHL contact */
+      autoReply     : true                       /* customer copy (formsubmit/wordpress only) */
     },
 
-    // Cities offered in the "City / area" dropdown.
+    /* Cities offered in the "City / area" dropdown. */
     cities: ["Sacramento","Elk Grove","Roseville","Folsom","Citrus Heights","Rancho Cordova",
              "Carmichael","Fair Oaks","Orangevale","Antelope","North Highlands","Rocklin",
              "Lincoln","Galt","West Sacramento","Woodland","Davis","El Dorado Hills",
              "Rio Linda","Wilton","Other / nearby"],
 
-    // Pickup windows offered on the Schedule step.
+    /* Pickup windows offered on the Schedule step. */
     windows: ["7:00 AM – 9:00 AM","9:00 AM – 11:00 AM","11:00 AM – 1:00 PM",
               "1:00 PM – 3:00 PM","3:00 PM – 5:00 PM","5:00 PM – 7:00 PM"],
 
@@ -598,9 +598,9 @@
   });
 
   var state = {
-    screen : "intro",                             // "intro" | 1 | 2 | 3 | 4
-    qty    : {},                                  // itemId -> quantity
-    flags  : {},                                  // accessFlag id -> true
+    screen : "intro",                             /* "intro" | 1 | 2 | 3 | 4 */
+    qty    : {},                                  /* itemId -> quantity */
+    flags  : {},                                  /* accessFlag id -> true */
     cat    : BRH_DATA[0].n,
     search : "",
     ack    : false,
@@ -884,7 +884,7 @@
       items_subtotal    : money(t.itemsTotal),
       minimum_adjustment: t.minAdj > 0 ? money(t.minAdj) : "",
       estimated_total   : money(t.total),
-      estimated_value   : t.total,                 // bare number for opportunity value
+      estimated_value   : t.total,                 /* bare number for opportunity value */
       extra_labor       : t.flagLines.map(function(f){ return f.flag.label; }).join("; "),
       itemized_list     : t.lines.map(function(l){ return l.qty + " x " + l.item.name + " — " + money(l.total); }).join("\n"),
       customer_notes    : d.notes,
@@ -1184,41 +1184,101 @@
     try{ document.execCommand("copy"); done(); }catch(e){ msg("Press Ctrl/Cmd+C to copy your quote.","err"); }
     document.body.removeChild(ta);
   }
+  /* Printing is built with DOM calls into a hidden iframe, never by writing an
+     HTML document as a string.
+
+     Two reasons, both learned the hard way:
+     1. A string containing a literal closing body tag is a landmine inside an
+        inline script. Plenty of WordPress plugins inject their code with a
+        plain str_replace on the FIRST closing body tag in the page, which
+        splices their markup into the middle of this script, ends the script
+        element early and dumps the rest of the code onto the page as text.
+        No markup literals here means nothing for them to match.
+     2. An iframe is not a popup, so mobile browsers do not block it.
+
+     Keep it this way: build nodes, never concatenate tags. build.py fails the
+     build if markup literals reappear in this file. */
+  function printEl(doc, parent, tag, css, text){
+    var node = doc.createElement(tag);
+    if(css) node.setAttribute("style", css);
+    if(text !== undefined && text !== null) node.appendChild(doc.createTextNode(String(text)));
+    parent.appendChild(node);
+    return node;
+  }
   function printSummary(){
-    var w = window.open("", "_blank", "width=760,height=900");
-    if(!w){ msg("Your browser blocked the print window — use “Copy my quote” instead.","err"); return; }
     var t = totals(), d = state.details;
-    var rows = t.lines.map(function(l){
-      return "<tr><td>"+esc(l.item.name)+(l.qty>1?" &times; "+l.qty:"")+"<br><small>"+esc(l.item.cat)+"</small></td><td>"+money(l.total)+"</td></tr>";
-    }).join("");
-    if(t.minAdj > 0) rows += '<tr><td>Minimum service charge adjustment</td><td>'+money(t.minAdj)+'</td></tr>';
-    t.flagLines.forEach(function(f){ if(f.amount>0) rows += '<tr><td>'+esc(f.flag.label)+' (+'+f.flag.pct+'%)</td><td>'+money(f.amount)+'</td></tr>'; });
-    rows += '<tr class="t"><td>Estimated total</td><td>'+money(t.total)+'</td></tr>';
-    var who = [d.name, d.phone, d.email, [d.address,d.city,d.zip].filter(Boolean).join(", "),
-               [d.date?niceDate(d.date):"", d.window].filter(Boolean).join(" ")].filter(Boolean).map(esc).join("<br>");
-    w.document.write(
-      '<!doctype html><html><head><meta charset="utf-8"><title>Big Rich Hauling estimate</title><style>'+
-      'body{font-family:Arial,Helvetica,sans-serif;color:#23282D;margin:34px;}'+
-      'h1{color:#D5291B;font-size:20px;margin:0 0 2px;text-transform:uppercase;}'+
-      '.sub{color:#5C6670;font-size:12px;margin-bottom:18px;}'+
-      '.tot{background:#D5291B;color:#fff;padding:14px 18px;border-radius:10px;font-size:26px;font-weight:bold;}'+
-      '.tot small{display:block;font-size:11px;font-weight:normal;text-transform:uppercase;letter-spacing:1px;opacity:.9;}'+
-      'table{border-collapse:collapse;width:100%;margin-top:18px;font-size:13px;}'+
-      'td{border-bottom:1px solid #E2E6EA;padding:8px 6px;vertical-align:top;}'+
-      'td:last-child{text-align:right;white-space:nowrap;font-weight:bold;}'+
-      'small{color:#8A949E;}tr.t td{background:#23282D;color:#fff;font-weight:bold;font-size:15px;}'+
-      '.who{margin-top:16px;font-size:12px;line-height:1.6;color:#5C6670;}'+
-      '.fine{margin-top:16px;font-size:10.5px;color:#8A949E;line-height:1.55;}</style></head><body>'+
-      '<h1>'+esc(CFG.businessName)+'</h1><div class="sub">Item-by-item estimate · '+esc(CFG.phone)+
-      ' · '+new Date().toLocaleDateString("en-US")+'</div>'+
-      '<div class="tot"><small>Your estimated total</small>'+money(t.total)+'</div>'+
-      '<table>'+rows+'</table>'+
-      (who?'<div class="who">'+who+'</div>':'')+
-      '<div class="fine">Estimate only, based on the items entered. Pricing assumes items are readily accessible; additional fees may apply for stairs, long carry distances, dismantling or other difficult access. Mattresses, appliances, refrigerant units, tires, electronics, concrete, dirt and paint may carry separate disposal charges. Final price is confirmed on site before any work begins.</div>'+
-      '</body></html>');
-    w.document.close();
-    w.focus();
-    setTimeout(function(){ try{ w.print(); }catch(e){} }, 350);
+    var old = document.getElementById("brh-print-frame");
+    if(old && old.parentNode) old.parentNode.removeChild(old);
+
+    var frame = document.createElement("iframe");
+    frame.id = "brh-print-frame";
+    frame.setAttribute("title", "Print preview");
+    frame.setAttribute("aria-hidden", "true");
+    frame.setAttribute("style", "position:fixed!important;right:0!important;bottom:0!important;" +
+      "width:0!important;height:0!important;border:0!important;visibility:hidden!important;");
+    document.body.appendChild(frame);
+
+    var win = frame.contentWindow, doc = win && win.document;
+    if(!doc){ msg("Printing isn't available in this browser — use “Copy my quote” instead.","err"); return; }
+    doc.open(); doc.close();
+    doc.title = CFG.businessName + " estimate";
+
+    var pageCss =
+      "body{font-family:Arial,Helvetica,sans-serif;color:#23282D;margin:34px;}" +
+      "table{border-collapse:collapse;width:100%;margin-top:18px;font-size:13px;}" +
+      "td{border-bottom:1px solid #E2E6EA;padding:8px 6px;vertical-align:top;}" +
+      "td:last-child{text-align:right;white-space:nowrap;font-weight:bold;}";
+    var styleTag = doc.createElement("style");
+    styleTag.appendChild(doc.createTextNode(pageCss));
+    (doc.head || doc.documentElement).appendChild(styleTag);
+
+    var body = doc.body;
+    printEl(doc, body, "h1", "color:#D5291B;font-size:20px;margin:0 0 2px;text-transform:uppercase;", CFG.businessName);
+    printEl(doc, body, "div", "color:#5C6670;font-size:12px;margin-bottom:18px;",
+      "Item-by-item estimate · " + CFG.phone + " · " + new Date().toLocaleDateString("en-US"));
+
+    var hero = printEl(doc, body, "div",
+      "background:#D5291B;color:#fff;padding:14px 18px;border-radius:10px;font-size:26px;font-weight:bold;");
+    printEl(doc, hero, "small",
+      "display:block;font-size:11px;font-weight:normal;text-transform:uppercase;letter-spacing:1px;opacity:.9;",
+      "Your estimated total");
+    hero.appendChild(doc.createTextNode(money(t.total)));
+
+    var table = printEl(doc, body, "table");
+    function row(label, value, sub, strong){
+      var tr = printEl(doc, table, "tr");
+      var td = printEl(doc, tr, "td", strong ? "background:#23282D;color:#fff;font-weight:bold;font-size:15px;" : "", label);
+      if(sub) printEl(doc, td, "div", "color:#8A949E;font-size:11px;", sub);
+      printEl(doc, tr, "td", strong ? "background:#23282D;color:#fff;font-weight:bold;font-size:15px;" : "", value);
+    }
+    t.lines.forEach(function(l){
+      row(l.item.name + (l.qty > 1 ? " × " + l.qty : ""), money(l.total), l.item.cat);
+    });
+    if(t.minAdj > 0) row("Minimum service charge adjustment", money(t.minAdj));
+    t.flagLines.forEach(function(f){
+      if(f.amount > 0) row(f.flag.label + " (+" + f.flag.pct + "%)", money(f.amount));
+    });
+    row("Estimated total", money(t.total), null, true);
+
+    var who = [d.name, d.phone, d.email, [d.address, d.city, d.zip].filter(Boolean).join(", "),
+               [d.date ? niceDate(d.date) : "", d.window].filter(Boolean).join(" ")].filter(Boolean);
+    if(who.length){
+      var box = printEl(doc, body, "div", "margin-top:16px;font-size:12px;line-height:1.6;color:#5C6670;");
+      who.forEach(function(lineText, i){
+        if(i) printEl(doc, box, "br");
+        box.appendChild(doc.createTextNode(lineText));
+      });
+    }
+    printEl(doc, body, "div", "margin-top:16px;font-size:10.5px;color:#8A949E;line-height:1.55;",
+      "Estimate only, based on the items entered. Pricing assumes items are readily accessible; " +
+      "additional fees may apply for stairs, long carry distances, dismantling or other difficult access. " +
+      "Mattresses, appliances, refrigerant units, tires, electronics, concrete, dirt and paint may carry " +
+      "separate disposal charges. Final price is confirmed on site before any work begins.");
+
+    setTimeout(function(){
+      try{ win.focus(); win.print(); }
+      catch(e){ msg("Printing isn't available in this browser — use “Copy my quote” instead.","err"); }
+    }, 250);
   }
 
   /* ---------- boot ---------- */
