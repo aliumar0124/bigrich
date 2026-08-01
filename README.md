@@ -29,7 +29,7 @@ Matches the reference estimator screen for screen:
 |--------|--------------|
 | **Before You Begin** | Welcome copy, the four accuracy tips, and the "estimate, not a final quote — you'll pay less, not more" note. The **Get started** button stays disabled until the customer ticks *I understand*. |
 | **1. Select Items** | "Include everything" warning, search across all 640 items, a 20-room category grid, and item cards with a gold **+** that becomes a −/qty/+ stepper. **No prices are shown here** — the header cart chip just counts items, and the hint below reads *"your price will be revealed on the next steps after you provide your info."* |
-| **2. Your Info** | Name, phone, email, service address, city/area, ZIP, notes — all validated. Plus optional *extra labor* flags (upstairs/downstairs, long carry, dismantling, heavy items) that are sent with the booking but do not change the estimate. |
+| **2. Your Info** | Name, phone and email only (see *How much we ask for* below). Plus optional *extra labor* flags (upstairs/downstairs, long carry, dismantling, heavy items) that are sent with the booking but do not change the estimate. |
 | **3. Your Estimate** | "Your quote is ready" → the headline total, an itemized breakdown with the minimum-charge adjustment, a booking-details card, the accessibility/disposal note. Also call, copy and print/PDF. |
 | **4. Book Your Time** | The Workiz online-booking calendar, embedded inline. The lead is sent **before** this screen opens, so a customer who abandons the calendar is still captured. |
 
@@ -80,6 +80,28 @@ Three things worth understanding about it:
   with the full item list. If the send fails, the customer is still taken to the calendar and
   prompted to paste their details in — the booking is never blocked by our own plumbing.
 - **The iframe is loaded lazily**, only when that step is reached, so it costs nothing on page load.
+
+### How much we ask for
+
+The Workiz calendar collects first name, last name, email, phone, address, city, state and zip
+itself, so anything the widget asks for is asked twice. `BRH_CONFIG.contact.mode` controls the
+balance:
+
+| mode | Asks for | Trade-off |
+|------|----------|-----------|
+| **`"minimal"`** *(default)* | Name, phone, email | Three fields, ~10 seconds. Keeps the lead if the customer abandons the calendar. |
+| `"full"` | Also address, city, ZIP, notes | Use with `booking.mode: "none"`, or when you want the job address even on incomplete bookings. |
+| `"none"` | Nothing — Items → Estimate → calendar | Fastest path, but a customer who abandons the calendar leaves you **nothing at all**. |
+
+`"minimal"` is the default deliberately. The one thing this widget does that Workiz cannot is
+capture the people who see a price and don't book — they never reach Workiz's form, so without a
+contact step they are invisible. Three fields is the smallest price for not losing them.
+
+Address, city and ZIP are left to Workiz because they matter to the job, not to the quote: pricing
+is volume-based and identical across the service area.
+
+`contact.showAccessFlags` toggles the extra-labor checkboxes independently — they're one tap, they
+help dispatch send the right crew, and Workiz's free-text description won't capture them reliably.
 
 ### About prefilling
 

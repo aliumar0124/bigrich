@@ -148,14 +148,16 @@ Add the trigger <strong>Inbound Webhook</strong>. GHL shows a URL shaped like:</
 </div>
 
 <div class="warn">
-  <strong>Scheduling lives in Workiz, not in this payload.</strong> The widget now embeds the Workiz
+  <strong>Scheduling and the address live in Workiz, not in this payload.</strong> The widget now embeds the Workiz
   online-booking calendar as its final step, so the customer picks their slot there. The
   <code>preferred_date</code>, <code>preferred_date_iso</code> and <code>preferred_window</code>
   fields below will arrive <em class="hl">empty</em> — don't build workflow logic that depends on
   them, and don't create a GHL appointment from them. The lead is sent to this webhook
   <em class="hl">before</em> the calendar opens, so some contacts will exist in GHL without a Workiz
   booking: those are people who got a price and dropped off, which is exactly who is worth a
-  follow-up.
+  follow-up. For the same reason the widget only asks for name, phone and email — Workiz collects
+  the service address — so <code>address1</code>, <code>city</code> and <code>postal_code</code>
+  normally arrive empty too. Build the contact on name, phone and email.
 </div>
 
 <h3><span class="step">4</span>Build the workflow actions <span class="who">GHL</span></h3>
@@ -222,9 +224,9 @@ struggles with nested objects. Reference each as
     <tr><td><code>last_name</code></td><td>text</td><td><code>De La Cruz</code> — split takes the first word as the given name, so multi-word surnames stay intact</td></tr>
     <tr><td><code>email</code></td><td>email</td><td><code>maria@example.com</code> — required by the form, always present</td></tr>
     <tr><td><code>phone</code></td><td>text</td><td><code>(916) 555-0177</code> — as the customer typed it; see troubleshooting if SMS steps reject it</td></tr>
-    <tr><td><code>address1</code></td><td>text</td><td><code>44 Oak Ave</code></td></tr>
-    <tr><td><code>city</code></td><td>text</td><td><code>Roseville</code> — chosen from a fixed dropdown of service areas</td></tr>
-    <tr><td><code>postal_code</code></td><td>text</td><td><code>95661</code> — optional field, can be empty</td></tr>
+    <tr><td><code>address1</code></td><td>text</td><td><strong>Usually empty</strong> — the widget asks only for name, phone and email; Workiz collects the address</td></tr>
+    <tr><td><code>city</code></td><td>text</td><td><strong>Usually empty</strong> — as above</td></tr>
+    <tr><td><code>postal_code</code></td><td>text</td><td><strong>Usually empty</strong> — as above</td></tr>
     <tr><td><code>state</code></td><td>text</td><td><code>CA</code> — constant</td></tr>
     <tr><td><code>preferred_date</code></td><td>text</td><td><strong>Empty</strong> while the Workiz calendar is embedded — scheduling happens there</td></tr>
     <tr><td><code>preferred_date_iso</code></td><td>date</td><td><strong>Empty</strong> — as above</td></tr>
