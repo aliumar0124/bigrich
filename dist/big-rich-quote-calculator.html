@@ -567,12 +567,13 @@
        a lead is never silently lost. */
     submit: {
       provider      : "ghl",
-      ghlWebhookUrl : "",   /* <-- PASTE your GHL Inbound Webhook URL here */
+      ghlWebhookUrl : "https://services.leadconnectorhq.com/hooks/DvbMbWmZ4KBa1rE9Jfqf/webhook-trigger/5314f7fa-9213-4518-b5ae-0410ffd4c41a",
       wordpressUrl  : "/wp-admin/admin-ajax.php?action=brh_booking",
       formsubmitUrl : "https://formsubmit.co/ajax/bigrichhauling@att.net",
       email         : "bigrichhauling@att.net",  /* mailto fallback + FormSubmit target */
       leadSource    : "Website Estimator",       /* stamped on the GHL contact */
-      autoReply     : true                       /* customer copy (formsubmit/wordpress only) */
+      autoReply     : true,                      /* customer copy (formsubmit/wordpress only) */
+      debug         : false                      /* true = show the POST result on screen */
     },
 
     /* ---- HOW MUCH CONTACT INFO WE ASK FOR ---------------------------------
@@ -919,8 +920,13 @@
     L.push("Name:     " + (d.name || "-"));
     L.push("Phone:    " + (d.phone || "-"));
     L.push("Email:    " + (d.email || "-"));
-    L.push("Address:  " + [d.address, d.city, d.zip].filter(Boolean).join(", "));
-    L.push("Pickup:   " + [d.date ? niceDate(d.date) : "", d.window].filter(Boolean).join(", "));
+    /* Skip lines we never collected — an empty "Address:" label in the email
+       reads like missing data rather than a deliberate choice. */
+    var addr = [d.address, d.city, d.zip].filter(Boolean).join(", ");
+    if(addr) L.push("Address:  " + addr);
+    var pickup = [d.date ? niceDate(d.date) : "", d.window].filter(Boolean).join(", ");
+    if(pickup) L.push("Pickup:   " + pickup);
+    else if(BOOKING_ON) L.push("Pickup:   customer is choosing a slot in the booking calendar");
     var flags = t.flagLines.map(function(f){ return f.flag.label; });
     L.push("Access:   " + (flags.length ? flags.join("; ") : "Nothing noted"));
     if(d.notes) L.push("Notes:    " + d.notes);
@@ -1310,19 +1316,49 @@
     }).then(function(r){
       if(!r.ok) throw new Error("HTTP " + r.status);
       return r.text().catch(function(){ return ""; });
-    }).then(function(){ succeed(btn); })
+    }).then(function(responseText){
+      log("booking delivered to " + dest.kind + " (" + dest.url + ")");
+      debugPanel("SENT OK -> " + dest.kind + "\n" + dest.url + "\n\nresponse: " +
+                 (responseText || "(empty)") + "\n\npayload:\n" + JSON.stringify(dest.body, null, 1));
+      succeed(btn);
+    })
       .catch(function(){
         /* A cross-origin POST can be refused at the CORS layer even when the
            receiver would have accepted the data. Retry once as a CORS-simple
            request: the browser sends it without a preflight and hides the
            response, so the lead still lands. If even that throws, fall back to
            email. Only worth trying for a third-party receiver. */
+        log("first POST to " + dest.url + " was refused; retrying without CORS");
         if(dest.kind === "wordpress"){ failToEmail(btn, label); return; }
         fetch(dest.url, { method:"POST", mode:"no-cors",
           headers:{ "Content-Type":"text/plain;charset=UTF-8" }, body:json })
-          .then(function(){ succeed(btn); })
-          .catch(function(){ failToEmail(btn, label); });
+          .then(function(){
+            log("booking sent to " + dest.kind + " without CORS — delivery cannot be confirmed from the browser");
+            debugPanel("SENT (no-cors, unconfirmable) -> " + dest.kind + "\n" + dest.url +
+                       "\n\npayload:\n" + JSON.stringify(dest.body, null, 1));
+            succeed(btn);
+          })
+          .catch(function(){
+            log("both attempts to " + dest.url + " failed");
+            debugPanel("FAILED -> " + dest.url);
+            failToEmail(btn, label);
+          });
       });
+  }
+  function log(msg, extra){
+    if(window.console && console.log) console.log("[Big Rich estimator] " + msg, extra === undefined ? "" : extra);
+  }
+  function debugPanel(text){
+    if(!CFG.submit.debug) return;
+    var box = q("[data-brh-msg]");
+    if(!box) return;
+    box.className = "brh-msg";
+    box.setAttribute("data-kind", "ok");
+    box.style.setProperty("font-family", "monospace", "important");
+    box.style.setProperty("font-size", ".78rem", "important");
+    box.style.setProperty("white-space", "pre-wrap", "important");
+    box.textContent = text;
+    box.hidden = false;
   }
   function succeed(btn){
     state.booked = true;

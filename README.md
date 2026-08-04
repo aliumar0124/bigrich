@@ -124,7 +124,7 @@ to paste into the booking form's notes.
 
 | provider | What happens | Setup |
 |----------|--------------|-------|
-| **`"ghl"`** *(shipped default)* | Posts to a GoHighLevel **Inbound Webhook**. The lead becomes a GHL contact (and optionally an opportunity), and the GHL workflow emails bigrichhauling@att.net. | Paste one URL — no code |
+| **`"ghl"`** *(active)* | Posts to the GoHighLevel **Inbound Webhook** (URL is configured). The lead becomes a GHL contact, and the GHL workflow emails bigrichhauling@att.net. | Wired up |
 | `"wordpress"` | Posts to the `brh_booking` handler in `functions.php`; `wp_mail()` sends it, so WP Mail SMTP delivers. Same-origin, so CORS can never bite, and the destination stays server-side. Can also relay to GHL. | Add the PHP snippet |
 | `"formsubmit"` | Posts to FormSubmit, which emails the address. | One-time activation click |
 | `"mailto"` | No POST — opens the customer's mail app with the quote pre-filled. | None |
@@ -157,6 +157,28 @@ ghlWebhookUrl : "https://services.leadconnectorhq.com/hooks/…/webhook-trigger/
 Re-paste the file into the Elementor HTML widget. **Until that URL is filled in, every booking
 quietly falls back to the email** — `python3 verify.py` prints an "ACTION REQUIRED" line while it's
 empty, and the browser console warns too.
+
+**Current state: the webhook URL is configured** and the widget POSTs to it on every completed
+estimate. Getting the data into GHL and getting an email out of GHL are two separate things, though:
+
+> ⚠️ **The email to bigrichhauling@att.net comes from the GHL workflow, not from the widget.** If the
+> workflow has no *Send Internal Notification* action, or was never **published**, the data still
+> arrives in GHL and no email is sent. That is the most likely reason for "the info isn't coming to
+> me" once the URL is in place — check the workflow's action list and that it is published, then
+> check its execution history for the test submission.
+
+### Confirming delivery without guessing
+
+Every submission logs its outcome to the browser console, prefixed `[Big Rich estimator]`:
+
+- `booking delivered to ghl (…)` — the POST returned success. The data is in GHL.
+- `booking sent to ghl without CORS — delivery cannot be confirmed from the browser` — the request
+  was sent but the browser hid the response. Check GHL's workflow history to confirm.
+- `both attempts to … failed` — nothing was delivered; the customer was shown the fallback.
+
+Setting `submit.debug: true` also prints the destination URL, the response and the exact payload on
+the quote screen, which is the fastest way to see what GHL is receiving. Turn it off afterwards —
+it's visible to customers.
 
 ### 3. Send one test booking
 
