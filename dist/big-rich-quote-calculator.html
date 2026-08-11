@@ -592,7 +592,7 @@
                  calendar. Fastest possible path, but a customer who abandons
                  the calendar leaves you nothing whatsoever. */
     contact: {
-      mode            : "minimal",
+      mode            : "full",
       showAccessFlags : true   /* the upstairs / long-carry / heavy checkboxes */
     },
 
@@ -612,7 +612,7 @@
        parameters are ignored, they cannot break the form. Set to {} to send a
        clean URL. */
     booking: {
-      mode          : "workiz",
+      mode          : "none",   /* "workiz" re-enables the embedded calendar below */
       url           : "https://online-booking.workiz.com/?ac=4453b7625b5e69cdea74b005bb1ae29dd8aac9da3be7bf4d5d0aacd4a0f67c93",
       height        : 780,
       prefillParams : { name:"name", phone:"phone", email:"email", address:"address" }

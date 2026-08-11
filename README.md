@@ -29,12 +29,12 @@ Matches the reference estimator screen for screen:
 |--------|--------------|
 | **Before You Begin** | Welcome copy, the four accuracy tips, and the "estimate, not a final quote — you'll pay less, not more" note. The **Get started** button stays disabled until the customer ticks *I understand*. |
 | **1. Select Items** | "Include everything" warning, search across all 640 items, a 20-room category grid, and item cards with a gold **+** that becomes a −/qty/+ stepper. **No prices are shown here** — the header cart chip just counts items, and the hint below reads *"your price will be revealed on the next steps after you provide your info."* |
-| **2. Your Info** | Name, phone and email only (see *How much we ask for* below). Plus optional *extra labor* flags (upstairs/downstairs, long carry, dismantling, heavy items) that are sent with the booking but do not change the estimate. |
-| **3. Your Estimate** | "Your quote is ready" → the headline total, an itemized breakdown with the minimum-charge adjustment, a booking-details card, the accessibility/disposal note. Also call, copy and print/PDF. |
-| **4. Book Your Time** | The Workiz online-booking calendar, embedded inline. The lead is sent **before** this screen opens, so a customer who abandons the calendar is still captured. |
+| **2. Your Info** | Name, phone, email, service address, city/area, ZIP and notes — all validated. Plus optional *extra labor* flags (upstairs/downstairs, long carry, dismantling, heavy items) that are sent with the booking but do not change the estimate. |
+| **3. Schedule** | Preferred date (today onward) and one of six two-hour pickup windows. This is a **request**, not a held slot — the office confirms it. |
+| **4. Your Estimate** | "Your quote is ready" → the headline total, an itemized breakdown with the minimum-charge adjustment, a booking-details card, the accessibility/disposal note, and **Confirm booking**, which posts the lead to GoHighLevel. Also call, copy and print/PDF. |
 
-With `booking.mode: "none"` the flow instead becomes Select Items → Your Info → **Schedule**
-(the widget's own date + six two-hour windows) → Your Estimate, ending in **Confirm booking**.
+Setting `booking.mode: "workiz"` swaps the Schedule step for the embedded Workiz calendar as a final
+"Book Your Time" screen — see *The booking calendar* below. It is **off** by default.
 
 The header cart chip opens a list where items can be adjusted or removed from any screen, and the
 step markers at the top let the customer jump back to an earlier screen without losing anything.
@@ -55,14 +55,17 @@ truth. `build.py` refuses to build if any row's stated price disagrees with `cub
 
 ---
 
-## The booking calendar
+## The booking calendar (off by default)
 
-`BRH_CONFIG.booking` embeds the Workiz online-booking calendar as the final step, so the customer
-picks their slot without leaving the page.
+`BRH_CONFIG.booking` can embed the Workiz online-booking calendar as a final step instead of the
+widget's own Schedule step, so the customer picks a real slot without leaving the page. It is
+currently **disabled** (`mode: "none"`) — the client moved scheduling back into the widget and now
+takes bookings through GoHighLevel only. Set `mode: "workiz"` to re-enable it; the URL is still
+in the config.
 
 ```js
 booking: {
-  mode          : "workiz",                     // "workiz" | "none"
+  mode          : "none",                       // "workiz" | "none"
   url           : "https://online-booking.workiz.com/?ac=…",
   height        : 780,
   prefillParams : { name:"name", phone:"phone", email:"email", address:"address" }
@@ -89,16 +92,14 @@ balance:
 
 | mode | Asks for | Trade-off |
 |------|----------|-----------|
-| **`"minimal"`** *(default)* | Name, phone, email | Three fields, ~10 seconds. Keeps the lead if the customer abandons the calendar. |
-| `"full"` | Also address, city, ZIP, notes | Use with `booking.mode: "none"`, or when you want the job address even on incomplete bookings. |
+| `"minimal"` | Name, phone, email | Three fields, ~10 seconds. Only worth it when the Workiz calendar collects the address instead. |
+| **`"full"`** *(current)* | Also address, city, ZIP, notes | Needed with `booking.mode: "none"`: nothing else collects the job address. |
 | `"none"` | Nothing — Items → Estimate → calendar | Fastest path, but a customer who abandons the calendar leaves you **nothing at all**. |
 
-`"minimal"` is the default deliberately. The one thing this widget does that Workiz cannot is
-capture the people who see a price and don't book — they never reach Workiz's form, so without a
-contact step they are invisible. Three fields is the smallest price for not losing them.
-
-Address, city and ZIP are left to Workiz because they matter to the job, not to the quote: pricing
-is volume-based and identical across the service area.
+With the calendar off, `"full"` is the right setting — the widget is the only thing that ever asks
+for the job address, so leaving it out would put an unschedulable lead in the CRM. If the Workiz
+calendar is switched back on, drop to `"minimal"` so the customer isn't asked for the same six fields
+twice.
 
 `contact.showAccessFlags` toggles the extra-labor checkboxes independently — they're one tap, they
 help dispatch send the right crew, and Workiz's free-text description won't capture them reliably.
