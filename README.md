@@ -9,15 +9,33 @@ Pricing comes from `Big_Rich_Hauling_Master_Household_Item_Price_List.xlsx`:
 
 ---
 
+This repo builds **two** paste-ready blocks:
+
+| File | What it is | Goes on |
+|------|------------|---------|
+| `dist/big-rich-quote-calculator.html` | The estimator itself | the booking page (`/book/`) |
+| `dist/big-rich-how-it-works.html` | A "3 steps to a clutter-free space" section with a **Get Instant Price** button | the homepage |
+
 ## Install (Elementor)
 
 1. Edit the page in Elementor.
 2. Drag in the **HTML** widget (Elementor → General → HTML).
-3. Open **`dist/big-rich-quote-calculator.html`**, copy the whole file, paste it into the widget's
-   *HTML Code* box.
+3. Open the file you want, copy the whole thing, paste it into the widget's *HTML Code* box.
 4. Update the page. Done — nothing else to install, no plugin, no external requests.
 
-To preview it outside WordPress, open `dist/preview.html` in any browser.
+To preview the estimator outside WordPress, open `dist/preview.html` in any browser.
+
+### The "How it works" section
+
+Pure HTML and CSS — no JavaScript at all, so there is nothing for a plugin to truncate. Three
+numbered steps joined by a connector line (horizontal on desktop, a vertical timeline on mobile) in
+red → gold → near-black, then a gold **Get Instant Price** button pointing at
+`https://bigrichhauling.com/book/`.
+
+Edit the copy directly in the markup; the button URL is on the `<a class="brh-how-cta">` near the
+bottom. Note the wording deliberately says *"see your estimate on the spot"* rather than the
+reference's *"guaranteed price"* — the estimator's own disclaimer says the final price is confirmed
+on site, and the two shouldn't contradict each other.
 
 ---
 
@@ -552,9 +570,11 @@ verify.py                         reconciles the build against all three sheets
 docs/Big-Rich-Hauling-GHL-Setup-Guide.pdf   hand this to whoever builds the GHL workflow
 docs/ghl-guide.html               its source; re-render with `node docs/render-guide.js`
 data/…price list.xlsx             master price list, the source of truth
-src/calculator.template.html      the widget (markup + CSS + JS), with a data placeholder
-dist/big-rich-quote-calculator.html   ← paste THIS into Elementor
-dist/preview.html                 same widget wrapped in a standalone page for previewing
+src/calculator.template.html      the estimator (markup + CSS + JS), with a data placeholder
+src/how-it-works.html             the homepage "3 steps" section (HTML + CSS only)
+dist/big-rich-quote-calculator.html   ← paste THIS into the /book/ page
+dist/big-rich-how-it-works.html       ← paste THIS onto the homepage
+dist/preview.html                 the estimator wrapped in a standalone page for previewing
 ```
 
 ## Colors

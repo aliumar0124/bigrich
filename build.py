@@ -18,6 +18,7 @@ ROOT = Path(__file__).parent
 XLSX = ROOT / "data" / "Big_Rich_Hauling_Master_Household_Item_Price_List.xlsx"
 TEMPLATE = ROOT / "src" / "calculator.template.html"
 OUT = ROOT / "dist" / "big-rich-quote-calculator.html"
+SECTIONS = [("src/how-it-works.html", "dist/big-rich-how-it-works.html")]
 
 NS = "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}"
 
@@ -196,6 +197,14 @@ def main():
         "</head>\n<body>\n" + html + "\n</body>\n</html>\n",
         encoding="utf-8",
     )
+
+    # standalone HTML sections (no data injection, but the same markup guard)
+    for src, dest in SECTIONS:
+        block = (ROOT / src).read_text(encoding="utf-8")
+        if "<script>" in block:
+            check_script(block)
+        (ROOT / dest).write_text(block, encoding="utf-8")
+        print(f"section         {dest}  ({len(block) / 1024:.1f} KB)")
 
     total = sum(len(c["i"]) for c in categories)
     print(f"rate            ${rate:.2f} per cubic yard")

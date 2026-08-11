@@ -1,0 +1,178 @@
+<!--
+  ============================================================================
+  BIG RICH HAULING — "HOW IT WORKS" 3-STEP SECTION
+  Self-contained block for the Elementor "HTML" widget. Drop it on the homepage.
+
+  HOW TO INSTALL
+    1. Edit the homepage in Elementor.
+    2. Drag in the "HTML" widget (Elementor > General > HTML).
+    3. Paste the ENTIRE contents of dist/big-rich-how-it-works.html
+       into the "HTML Code" box. Update, done.
+
+  NOTES
+    * Pure HTML + CSS. No JavaScript, no external fonts, images or libraries.
+    * Every CSS declaration carries !important and every selector is scoped
+      under #brh-how, so Elementor / theme global styles cannot override it
+      and this block cannot leak styles onto the rest of the page.
+    * Edit the step copy and the button straight in the markup below — the
+      button URL is on the <a class="brh-how-cta"> near the bottom.
+  ============================================================================
+-->
+<section id="brh-how" class="brh-how-root" aria-labelledby="brh-how-title">
+<style>
+/* ===== scoped reset ==================================================== */
+#brh-how,#brh-how *,#brh-how *::before,#brh-how *::after{box-sizing:border-box!important;}
+#brh-how{
+  /* ---- BRAND COLORS (bigrichhauling.com) ---- */
+  --brh-red:#D5291B!important;
+  --brh-red-dk:#AE1F12!important;
+  --brh-gold:#C4A052!important;
+  --brh-gold-dk:#A5843C!important;
+  --brh-gold-soft:#FBF4E6!important;
+  --brh-ink:#23282D!important;
+  --brh-ink-2:#5C6670!important;
+  --brh-line:#E2E6EA!important;
+  --brh-font:"Poppins","Montserrat",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif!important;
+  display:block!important;width:100%!important;margin:0 auto!important;padding:64px 24px!important;
+  background:#fff!important;font-family:var(--brh-font)!important;font-size:16px!important;font-weight:400!important;
+  line-height:1.55!important;color:var(--brh-ink)!important;text-align:center!important;letter-spacing:normal!important;
+  text-transform:none!important;-webkit-font-smoothing:antialiased!important;
+}
+/* Universal in-scope reset: neutralises anything the theme or an Elementor
+   global pushes onto our descendants. Every rule below is a class selector, so
+   it outranks this and still wins. */
+#brh-how *{
+  font-family:var(--brh-font)!important;font-size:inherit!important;font-weight:inherit!important;
+  font-style:normal!important;line-height:inherit!important;letter-spacing:normal!important;
+  text-transform:none!important;text-decoration:none!important;text-shadow:none!important;
+  text-align:inherit!important;color:inherit!important;-webkit-text-fill-color:currentColor!important;
+  background-color:transparent!important;border:0 none!important;margin:0!important;padding:0!important;
+  box-shadow:none!important;float:none!important;list-style:none!important;
+}
+#brh-how div,#brh-how span,#brh-how p,#brh-how a,#brh-how ol,#brh-how li,#brh-how h2,#brh-how h3,#brh-how b,#brh-how strong,#brh-how small{
+  width:auto!important;max-width:100%!important;min-width:0!important;min-height:0!important;
+}
+#brh-how b,#brh-how strong{font-weight:800!important;}
+#brh-how svg{display:block!important;width:1em!important;height:1em!important;flex:0 0 auto!important;
+  fill:none!important;stroke:currentColor!important;stroke-width:2.4!important;stroke-linecap:round!important;stroke-linejoin:round!important;}
+
+/* ===== header ========================================================== */
+#brh-how .brh-how-inner{max-width:1140px!important;margin:0 auto!important;}
+#brh-how .brh-how-eyebrow{display:inline-block!important;font-size:.8rem!important;font-weight:800!important;
+  text-transform:uppercase!important;letter-spacing:2.2px!important;color:var(--brh-gold-dk)!important;margin-bottom:14px!important;}
+#brh-how .brh-how-h{font-size:2.6rem!important;line-height:1.12!important;font-weight:800!important;
+  color:var(--brh-ink)!important;letter-spacing:-.4px!important;}
+#brh-how .brh-how-h em{font-style:normal!important;color:var(--brh-red)!important;}
+#brh-how .brh-how-sub{max-width:620px!important;margin:16px auto 0!important;font-size:1.05rem!important;
+  font-weight:500!important;color:var(--brh-ink-2)!important;}
+
+/* ===== steps =========================================================== */
+#brh-how .brh-how-steps{position:relative!important;display:grid!important;
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:32px!important;margin-top:56px!important;}
+/* the connector, drawn behind the badges and stopping inside the outer two */
+#brh-how .brh-how-steps::before{content:""!important;position:absolute!important;top:27px!important;
+  left:16.6667%!important;right:16.6667%!important;height:3px!important;border-radius:3px!important;
+  background:linear-gradient(90deg,var(--brh-red) 0%,var(--brh-gold) 50%,var(--brh-ink) 100%)!important;
+  opacity:.55!important;z-index:0!important;}
+#brh-how .brh-how-step{position:relative!important;z-index:1!important;padding:0 8px!important;}
+#brh-how .brh-how-num{display:inline-flex!important;align-items:center!important;justify-content:center!important;
+  width:54px!important;height:54px!important;border-radius:999px!important;font-size:1.25rem!important;font-weight:800!important;
+  color:#fff!important;margin-bottom:20px!important;box-shadow:0 0 0 8px #fff, 0 6px 16px rgba(16,20,24,.14)!important;}
+#brh-how .brh-how-step:nth-child(1) .brh-how-num{background:var(--brh-red)!important;}
+#brh-how .brh-how-step:nth-child(2) .brh-how-num{background:var(--brh-gold)!important;}
+#brh-how .brh-how-step:nth-child(3) .brh-how-num{background:var(--brh-ink)!important;}
+#brh-how .brh-how-step h3{font-size:1.22rem!important;line-height:1.3!important;font-weight:800!important;
+  color:var(--brh-ink)!important;margin-bottom:9px!important;}
+#brh-how .brh-how-step p{font-size:.97rem!important;font-weight:500!important;color:var(--brh-ink-2)!important;
+  max-width:330px!important;margin:0 auto!important;}
+
+/* ===== call to action ================================================== */
+#brh-how .brh-how-foot{margin-top:52px!important;}
+#brh-how .brh-how-cta{display:inline-flex!important;align-items:center!important;justify-content:center!important;
+  gap:12px!important;padding:19px 44px!important;border-radius:999px!important;background:var(--brh-gold)!important;
+  color:#fff!important;font-size:1.05rem!important;font-weight:800!important;text-transform:uppercase!important;
+  letter-spacing:1.1px!important;box-shadow:0 6px 20px rgba(196,160,82,.42)!important;
+  transition:background-color .15s ease,transform .12s ease,box-shadow .15s ease!important;}
+#brh-how .brh-how-cta:hover{background:var(--brh-gold-dk)!important;transform:translateY(-2px)!important;
+  box-shadow:0 9px 24px rgba(165,132,60,.45)!important;color:#fff!important;}
+#brh-how .brh-how-cta:focus-visible{outline:3px solid rgba(213,41,27,.5)!important;outline-offset:3px!important;}
+#brh-how .brh-how-cta svg{width:1.05em!important;height:1.05em!important;}
+#brh-how .brh-how-note{display:flex!important;flex-wrap:wrap!important;align-items:center!important;
+  justify-content:center!important;gap:0 4px!important;margin-top:18px!important;font-size:.92rem!important;
+  font-weight:600!important;color:var(--brh-ink-2)!important;}
+#brh-how .brh-how-note > span{white-space:nowrap!important;}
+#brh-how .brh-how-note a{color:var(--brh-red)!important;font-weight:800!important;white-space:nowrap!important;}
+#brh-how .brh-how-note a:hover{color:var(--brh-red-dk)!important;text-decoration:underline!important;}
+#brh-how .brh-how-dot{display:inline-block!important;margin:0 9px!important;color:var(--brh-line)!important;}
+
+/* ===== responsive ====================================================== */
+@media (max-width:900px){
+  #brh-how{padding:52px 20px!important;}
+  #brh-how .brh-how-h{font-size:2.1rem!important;}
+  #brh-how .brh-how-steps{grid-template-columns:minmax(0,1fr)!important;gap:0!important;margin-top:42px!important;
+    text-align:left!important;}
+  /* the connector becomes one segment per step, so it ends at the last badge
+     rather than trailing past it down the last paragraph */
+  #brh-how .brh-how-steps::before{display:none!important;}
+  #brh-how .brh-how-step::before{content:""!important;position:absolute!important;left:25.5px!important;
+    top:54px!important;bottom:-4px!important;width:3px!important;border-radius:3px!important;opacity:.55!important;
+    z-index:0!important;}
+  #brh-how .brh-how-step:nth-child(1)::before{background:linear-gradient(180deg,var(--brh-red),var(--brh-gold))!important;}
+  #brh-how .brh-how-step:nth-child(2)::before{background:linear-gradient(180deg,var(--brh-gold),var(--brh-ink))!important;}
+  #brh-how .brh-how-step:last-child::before{display:none!important;}
+  #brh-how .brh-how-num{position:relative!important;z-index:1!important;}
+  #brh-how .brh-how-step{display:grid!important;grid-template-columns:54px minmax(0,1fr)!important;
+    column-gap:20px!important;padding:0 0 30px!important;}
+  #brh-how .brh-how-step:last-child{padding-bottom:0!important;}
+  #brh-how .brh-how-num{grid-row:1 / span 2!important;margin-bottom:0!important;box-shadow:0 0 0 7px #fff, 0 5px 14px rgba(16,20,24,.14)!important;}
+  #brh-how .brh-how-step h3{align-self:center!important;margin-bottom:6px!important;}
+  #brh-how .brh-how-step p{margin:0!important;max-width:none!important;}
+}
+@media (max-width:560px){
+  #brh-how{padding:44px 16px!important;}
+  #brh-how .brh-how-h{font-size:1.72rem!important;}
+  #brh-how .brh-how-sub{font-size:.98rem!important;}
+  #brh-how .brh-how-eyebrow{letter-spacing:1.6px!important;}
+  #brh-how .brh-how-cta{width:100%!important;padding:18px 22px!important;font-size:.95rem!important;letter-spacing:.8px!important;}
+  #brh-how .brh-how-step h3{font-size:1.1rem!important;}
+  #brh-how .brh-how-note{flex-direction:column!important;gap:5px!important;}
+  #brh-how .brh-how-dot{display:none!important;}
+}
+</style>
+
+  <div class="brh-how-inner">
+    <span class="brh-how-eyebrow">How it works</span>
+    <h2 class="brh-how-h" id="brh-how-title">3 Steps to a <em>Clutter-Free</em> Space</h2>
+    <p class="brh-how-sub">Pick your items, see your price, choose your pickup. Our Sacramento crew handles the rest — you don't lift a thing.</p>
+
+    <ol class="brh-how-steps">
+      <li class="brh-how-step">
+        <span class="brh-how-num" aria-hidden="true">1</span>
+        <h3>Get your instant price</h3>
+        <p>Choose your items from our full price list and see your estimate on the spot — no waiting on a callback, no sales pressure.</p>
+      </li>
+      <li class="brh-how-step">
+        <span class="brh-how-num" aria-hidden="true">2</span>
+        <h3>Choose a pickup window</h3>
+        <p>Tell us the day and time that suits you. Same-day and next-day pickups are available across most of the Sacramento area.</p>
+      </li>
+      <li class="brh-how-step">
+        <span class="brh-how-num" aria-hidden="true">3</span>
+        <h3>We handle the heavy lifting</h3>
+        <p>Our crew loads it all, sweeps up after, and disposes of everything responsibly — donating and recycling wherever we can.</p>
+      </li>
+    </ol>
+
+    <div class="brh-how-foot">
+      <a class="brh-how-cta" href="https://bigrichhauling.com/book/">
+        Get Instant Price
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </a>
+      <p class="brh-how-note">
+        <span>Free estimate, no obligation</span>
+        <span class="brh-how-dot" aria-hidden="true">&bull;</span>
+        <span>Prefer to talk? <a href="tel:+19162529500">916-252-9500</a></span>
+      </p>
+    </div>
+  </div>
+</section>
