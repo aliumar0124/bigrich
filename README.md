@@ -48,11 +48,14 @@ Matches the reference estimator screen for screen:
 | **Before You Begin** | Welcome copy, the four accuracy tips, and the "estimate, not a final quote — you'll pay less, not more" note. The **Get started** button stays disabled until the customer ticks *I understand*. |
 | **1. Select Items** | "Include everything" warning, search across all 640 items, a 20-room category grid, and item cards with a gold **+** that becomes a −/qty/+ stepper. **No prices are shown here** — the header cart chip just counts items, and the hint below reads *"your price will be revealed on the next steps after you provide your info."* |
 | **2. Your Info** | Name, phone, email, service address, city/area, ZIP and notes — all validated. Plus optional *extra labor* flags (upstairs/downstairs, long carry, dismantling, heavy items) that are sent with the booking but do not change the estimate. |
-| **3. Schedule** | Preferred date (today onward) and one of six two-hour pickup windows. This is a **request**, not a held slot — the office confirms it. |
-| **4. Your Estimate** | "Your quote is ready" → the headline total, an itemized breakdown with the minimum-charge adjustment, a booking-details card, the accessibility/disposal note, and **Confirm booking**, which posts the lead to GoHighLevel. Also call, copy and print/PDF. |
+| **3. Your Estimate** | "Your quote is ready" → the headline total, itemized breakdown, details card and the accessibility/disposal note, plus confirmation that the request is already with the office. Call, copy and print/PDF. |
 
-Setting `booking.mode: "workiz"` swaps the Schedule step for the embedded Workiz calendar as a final
-"Book Your Time" screen — see *The booking calendar* below. It is **off** by default.
+**The webhook fires at the end of step 2**, the moment the customer presses *Continue* on the contact
+form — before they are shown the price. See *When the lead is sent* below.
+
+There is no scheduling step: the office arranges timing when it follows up. `scheduleStep: true`
+brings back a preferred date and time window, and `booking.mode: "workiz"` swaps that for the
+embedded Workiz calendar; both are **off**.
 
 The header cart chip opens a list where items can be adjusted or removed from any screen, and the
 step markers at the top let the customer jump back to an earlier screen without losing anything.
@@ -136,6 +139,26 @@ to send a clean URL.
 Because a retype is possible, the booking screen shows the customer's details with a **Copy my
 details** button — one tap puts their name, phone, address, estimate and item list on the clipboard
 to paste into the booking form's notes.
+
+## When the lead is sent
+
+`submit.trigger` decides the moment the webhook fires:
+
+| trigger | Fires when | Why |
+|---------|-----------|-----|
+| **`"info"`** *(current)* | The customer presses **Continue** at the end of the *Your Info* step, before the price is revealed | Nothing is lost on the price screen. Everything the office needs — who they are, where, and the full item list with the total — is already known at that point. |
+| `"final"` | They press **Confirm booking** on the estimate screen | Only leads that saw and accepted the price. Fewer, warmer, but you never hear about the ones who balked. |
+
+With `"info"`, the estimate screen becomes a receipt: the *Confirm booking* button is replaced by a
+**Questions? Call** action, and a green banner confirms the request is already in.
+
+Two behaviours worth knowing:
+
+- **The webhook does not fire on an invalid form.** Validation runs first; a customer who leaves the
+  phone field blank stays on the step and nothing is sent.
+- **Editing the item list re-sends.** If someone goes back, adds a sofa and presses Continue again, a
+  second POST goes out with the revised total, so the office sees the current number. Pressing
+  Continue twice on unchanged data does **not** re-send, so no duplicate notifications.
 
 ## Where the lead goes
 

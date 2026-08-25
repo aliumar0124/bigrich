@@ -96,11 +96,13 @@
 
 <div class="lead">
   <strong>What this is.</strong> The website has a new <strong>Item-by-Item Estimator</strong> — a
-  4-step calculator on bigrichhauling.com where a customer picks the items they need hauled, enters
-  their details, requests a pickup date and window, and sees a priced estimate. When they press
-  <strong>Confirm booking</strong>, the widget POSTs the whole booking as flat JSON to a
-  GoHighLevel <strong>Inbound Webhook</strong>. This is the only place the booking goes — there is no
-  other integration behind it.
+  3-step calculator on bigrichhauling.com: the customer picks the items they need hauled, enters
+  their contact details, then sees a priced estimate.
+  <br><br>
+  <strong>The webhook fires at the end of step 2</strong> — the moment they finish the contact form
+  and press <em class="hl">Continue</em>, before the price is even shown to them. The whole lead goes
+  as flat JSON to a GoHighLevel <strong>Inbound Webhook</strong>. That is the only place it goes:
+  there is no other integration behind it.
   <br><br>
   <strong>What we need from you.</strong> One workflow that (1) creates or updates the contact,
   (2) emails the booking to <code>bigrichhauling@att.net</code>, and optionally (3) creates an
@@ -113,7 +115,7 @@
   <tr><td>Trigger type</td><td>Inbound Webhook (Workflow trigger)</td></tr>
   <tr><td>Notification goes to</td><td><code>bigrichhauling@att.net</code></td></tr>
   <tr><td>Lead source value</td><td><code>Website Estimator</code> (sent in the <code>source</code> field)</td></tr>
-  <tr><td>Volume</td><td>Low — one POST per completed booking. No batching, no retries from our side.</td></tr>
+  <tr><td>Volume</td><td>Low — one POST per completed contact form. If the customer goes back, changes their item list and continues again, a second POST is sent with the revised total; pressing Continue twice on unchanged data does not re-send.</td></tr>
 </table>
 
 <h2>Setup steps</h2>
@@ -144,16 +146,17 @@ Add the trigger <strong>Inbound Webhook</strong>. GHL shows a URL shaped like:</
   learns the field names <em class="hl">after it has actually received a payload</em>. Until a real
   POST arrives, the mapping dropdowns in the workflow are empty.
   <br><br>
-  So: complete one real booking on the live page (any item, real email address), <em class="hl">then</em>
-  reopen the trigger. Every field in the reference table below will be listed and selectable.
+  So: on the live page pick any item, fill in the contact form and press <em class="hl">Continue</em>
+  — that is the POST. Then reopen the trigger and every field in the reference table below will be
+  listed and selectable.
 </div>
 
-<div class="note">
-  <strong>The pickup date and window are a request, not a confirmed slot.</strong> Nothing on the
-  website holds a place on a calendar — the customer states when they would like the pickup and the
-  office confirms it. So the notification email is the action that matters most; if you also create a
-  GHL appointment from <code>preferred_date_iso</code>, treat it as provisional until someone
-  confirms.
+<div class="warn">
+  <strong>There is no scheduling in this form at all.</strong> The website never asks for a pickup
+  date or time and never holds a slot — the office arranges timing when it follows up. So
+  <code>preferred_date</code>, <code>preferred_date_iso</code> and <code>preferred_window</code>
+  always arrive <em class="hl">empty</em>: don't map them, and don't create a GHL appointment from
+  them. The notification email is the action that matters.
 </div>
 
 <h3><span class="step">4</span>Build the workflow actions <span class="who">GHL</span></h3>
@@ -224,9 +227,9 @@ struggles with nested objects. Reference each as
     <tr><td><code>city</code></td><td>text</td><td><code>Sacramento</code> — chosen from a fixed dropdown of service areas</td></tr>
     <tr><td><code>postal_code</code></td><td>text</td><td><code>95811</code> — optional, can be empty</td></tr>
     <tr><td><code>state</code></td><td>text</td><td><code>CA</code> — constant</td></tr>
-    <tr><td><code>preferred_date</code></td><td>text</td><td><code>Fri, Sep 18, 2026</code> — human-readable, for emails</td></tr>
-    <tr><td><code>preferred_date_iso</code></td><td>date</td><td><code>2026-09-18</code> — use this for date fields or appointment logic</td></tr>
-    <tr><td><code>preferred_window</code></td><td>text</td><td><code>9:00 AM – 11:00 AM</code> — one of six two-hour windows</td></tr>
+    <tr><td><code>preferred_date</code></td><td>text</td><td><strong>Always empty</strong> — the form has no scheduling step</td></tr>
+    <tr><td><code>preferred_date_iso</code></td><td>date</td><td><strong>Always empty</strong> — as above</td></tr>
+    <tr><td><code>preferred_window</code></td><td>text</td><td><strong>Always empty</strong> — as above</td></tr>
     <tr><td><code>item_count</code></td><td>number</td><td><code>3</code> — total pieces, quantities included</td></tr>
     <tr><td><code>cubic_yards</code></td><td>number</td><td><code>6.5</code> — estimated volume; useful for dispatching the right truck</td></tr>
     <tr><td><code>items_subtotal</code></td><td>text</td><td><code>$120.00</code> — before the minimum charge is applied</td></tr>
